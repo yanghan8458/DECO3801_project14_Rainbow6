@@ -14,11 +14,11 @@ analyzePage(url).then(async (result) => {
   const output = JSON.stringify(result, null, 2);
   console.log(output);
 
-  // 创建 outputs 文件夹
+  // Create outputs folder
   const outputDir = path.join(__dirname, "outputs");
   await fs.mkdir(outputDir, { recursive: true });
 
-  // 文件名 = URL + 时间戳
+  // File name = URL + timestamp
   const safeUrl = url.replace(/https?:\/\//, "").replace(/[\/:?&=]/g, "_");
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
 
@@ -26,8 +26,8 @@ analyzePage(url).then(async (result) => {
   const filePath = path.join(outputDir, filename);
 
   await fs.writeFile(filePath, output, "utf8");
-  console.log(`✅ 结果已保存到文件：${filePath}`);
+  console.log(`✅ Result has been saved to the file：${filePath}`);
 }).catch(err => {
-  console.error("❌ 分析失败：", err.message);
+  console.error("❌ Analysis failure：", err.message);
   process.exit(1);
 });
