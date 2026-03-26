@@ -8,16 +8,16 @@ async function analyzePage(url) {
 
   const data = await page.evaluate(() => {
 
-    // ===== Exract elements =====
+    // ===== Basic element extraction =====
     function extractElements() {
       return {
         headings: [...document.querySelectorAll("h1,h2,h3,h4,h5,h6")]
           .map(el => el.innerText.trim())
-          .filter(t => t),
+          .filter(Boolean),
 
         paragraphs: [...document.querySelectorAll("p")]
           .map(el => el.innerText.trim())
-          .filter(t => t),
+          .filter(Boolean),
 
         links: [...document.querySelectorAll("a")]
           .map(el => el.href),
@@ -30,7 +30,7 @@ async function analyzePage(url) {
       };
     }
 
-    // ===== DOM structure =====
+    // ===== DOM Structure =====
     function extractDOM(node, depth = 0) {
       if (!node || depth > 5) return null;
 
@@ -42,96 +42,142 @@ async function analyzePage(url) {
       };
     }
 
-    // ===== Count + Cognitive Metrics =====
-    function extractStats() {
+    // ==============================
+    //     Each alalyzer module
+    // ==============================
+
+    function analyzeLanguage() {
       const text = document.body.innerText || "";
       const words = text.split(/\s+/).filter(Boolean);
-      const sentences = text.split(/[.!?]/).filter(s => s.trim().length > 0);
+      const sentences = text.split(/[.!?]/).filter(s => s.trim());
 
-      const headings = document.querySelectorAll("h1,h2,h3,h4,h5,h6");
-      const paragraphs = document.querySelectorAll("p");
-      const links = document.querySelectorAll("a");
-      const buttons = document.querySelectorAll("button");
-      const images = document.querySelectorAll("img");
+      return {
+        wordCount: words.length,
+        sentenceCount: sentences.length,
+        avgSentenceLength: sentences.length
+          ? words.length / sentences.length
+          : 0
+      };
+    }
 
-      const allElements = document.querySelectorAll("*");
+    function analyzeLayout() {
+      const elements = document.querySelectorAll("*");
 
-      // ===== Language Complexity =====
-      const avgSentenceLength = sentences.length ? words.length / sentences.length : 0;
+      return {
+        totalElements: elements.length
+      };
+    }
 
-      // ===== Layout Density =====
-      const layoutDensity = allElements.length;
-
-      // ===== Navigation Clarity =====
+    function analyzeNavigation() {
       const navMenus = document.querySelectorAll("nav, ul, ol").length;
+
       const navDepth = Math.max(
         ...Array.from(document.querySelectorAll("ul")).map(ul => ul.children.length),
         0
       );
 
-      // ===== Visual Hierarchy =====
-      const headingLevels = [...headings].map(h =>
+      return {
+        menuCount: navMenus,
+        maxDepth: navDepth
+      };
+    }
+
+    function analyzeVisualHierarchy() {
+      const headings = [...document.querySelectorAll("h1,h2,h3,h4,h5,h6")];
+
+      const levels = headings.map(h =>
         parseInt(h.tagName.substring(1))
       );
 
-      const hierarchyScore = headingLevels.length
-        ? Math.max(...headingLevels) - Math.min(...headingLevels)
-        : 0;
+      return {
+        headingCount: headings.length,
+        hierarchyRange: levels.length
+          ? Math.max(...levels) - Math.min(...levels)
+          : 0
+      };
+    }
 
-      // ===== Animation & Distraction =====
-      const animationCount = [...allElements].filter(el => {
+    function analyzeInteraction() {
+      const links = document.querySelectorAll("a").length;
+      const buttons = document.querySelectorAll("button").length;
+
+      return {
+        linkCount: links,
+        buttonCount: buttons,
+        interactionLoad: links + buttons
+      };
+    }
+
+    function analyzeAnimation() {
+      const elements = [...document.querySelectorAll("*")];
+
+      const animationCount = elements.filter(el => {
         const style = window.getComputedStyle(el);
         return style.animationName !== "none" ||
                style.transitionDuration !== "0s";
       }).length;
 
-      // ===== Spacing & Chunking =====
-      const avgParagraphLength = paragraphs.length
-        ? words.length / paragraphs.length
-        : 0;
-
-      // ===== Consistency =====
-      const buttonClasses = [...buttons].map(btn => btn.className);
-      const consistencyScore = new Set(buttonClasses).size;
-
-      // ===== Form Complexity =====
-      const inputs = document.querySelectorAll("input, textarea, select");
-      const formFieldCount = inputs.length;
-
-      // ===== Error Prevention =====
-      const requiredFields = document.querySelectorAll("[required]").length;
-      const hasErrorMessage = text.toLowerCase().includes("error");
-
       return {
-        // Standard Count
-        headingCount: headings.length,
-        paragraphCount: paragraphs.length,
-        linkCount: links.length,
-        buttonCount: buttons.length,
-        imageCount: images.length,
-        wordCount: words.length,
-        avgSentenceLength,
-
-        interactionLoad: links.length + buttons.length,
-        
-        // Further features
-        layoutDensity,
-        navigationMenuCount: navMenus,
-        navigationDepth: navDepth,
-        visualHierarchyScore: hierarchyScore,
-        avgParagraphLength,
-        consistencyScore,
-        formFieldCount,
-        requiredFieldCount: requiredFields,
-        hasErrorMessage,
         animationCount
       };
     }
 
+    function analyzeSpacing() {
+      const paragraphs = [...document.querySelectorAll("p")];
+      const text = document.body.innerText || "";
+      const words = text.split(/\s+/).filter(Boolean);
+
+      return {
+        paragraphCount: paragraphs.length,
+        avgParagraphLength: paragraphs.length
+          ? words.length / paragraphs.length
+          : 0
+      };
+    }
+
+    function analyzeConsistency() {
+      const buttons = [...document.querySelectorAll("button")];
+      const classes = buttons.map(btn => btn.className);
+
+      return {
+        uniqueButtonStyles: new Set(classes).size
+      };
+    }
+
+    function analyzeForms() {
+      const inputs = document.querySelectorAll("input, textarea, select");
+
+      return {
+        fieldCount: inputs.length
+      };
+    }
+
+    function analyzeErrorPrevention() {
+      const text = document.body.innerText.toLowerCase();
+
+      return {
+        requiredFields: document.querySelectorAll("[required]").length,
+        hasErrorMessage: text.includes("error")
+      };
+    }
+
+    // ===== Final output (Artifacts structure) =====
     return {
       elements: extractElements(),
-      stats: extractStats(),
-      domTree: extractDOM(document.body)
+      domTree: extractDOM(document.body),
+
+      analysis: {
+        language: analyzeLanguage(),
+        layout: analyzeLayout(),
+        navigation: analyzeNavigation(),
+        visualHierarchy: analyzeVisualHierarchy(),
+        interaction: analyzeInteraction(),
+        animation: analyzeAnimation(),
+        spacing: analyzeSpacing(),
+        consistency: analyzeConsistency(),
+        forms: analyzeForms(),
+        errorPrevention: analyzeErrorPrevention()
+      }
     };
   });
 
