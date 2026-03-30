@@ -34,19 +34,19 @@ The entire analysis process is divided into 3 key steps:
 
 The tool launches Puppeteer in headless mode (runs in the background without a visible window), creates a new browser page, navigates to the target URL, and waits for network requests to stabilize before starting analysis.
 
-2. Core: HTML Extraction & Analysis (page.evaluate)
+#### 2. Core: HTML Extraction & Analysis (page.evaluate)
 
 The page.evaluate() method runs code directly in the browser's web environment, enabling DOM operations and information extraction (similar to developer tools).
 
-2.1 Basic Element Extraction (extractElements)
+##### 2.1 Basic Element Extraction (extractElements)
 
 Uses CSS selectors to capture core page elements, including headings (h1-h6), paragraphs, links, buttons, and image sources.
 
-2.2 DOM Structure Extraction (extractDOM)
+##### 2.2 DOM Structure Extraction (extractDOM)
 
 Recursively traverses HTML nodes, records tag names and child elements, with limits: maximum depth of 5 levels and up to 10 child elements per node (to avoid excessive resource consumption).
 
-2.3 10-Dimensional Web Page Analysis
+##### 2.3 10-Dimensional Web Page Analysis
 
 The analysis is split into 10 independent modules (statistical details omitted), covering key dimensions of web page quality:
 
@@ -70,10 +70,10 @@ The analysis is split into 10 independent modules (statistical details omitted),
 
 - Error Prevention: Related to page form validation and error prompt statistics
 
-3. Close Browser & Return Results
+#### 3. Close Browser & Return Results
 
 After analysis, the browser is closed to release resources. The tool returns a structured JSON object containing the target URL, extracted element data, and 10-dimensional analysis report.
 
-Output
+### Output
 
 Structured JSON data, which can be used for web page quality detection, UI analysis, and SEO inspection.
