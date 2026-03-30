@@ -1,5 +1,5 @@
 # DECO3801_project14_RainbowSix
-Ranbowsix code base for project14
+Ranbowsix code base for project14, HTML exract, mapping and score.
 
 ## First update<br>
 - index.js: input and output setting<br>
