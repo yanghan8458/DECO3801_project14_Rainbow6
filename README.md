@@ -16,21 +16,21 @@ Puppeteer Web Page Analyzer -
 
 A web page automation analysis tool built with Puppeteer (headless browser), designed to extract HTML elements, perform basic statistics (briefly mentioned), and generate structured analysis reports.
 
-Core Function
+### Core Function
 
 Automatically open web pages → extract HTML elements → perform basic data statistics (details omitted) → generate structured web page analysis reports.
 
-Technical Foundation
+### Technical Foundation
 
 - Puppeteer (headless browser): For simulating browser behavior and accessing web pages.
 
 - Native JavaScript: For DOM operations, element extraction and basic statistics (no third-party libraries required).
 
-Analysis Process
+### Analysis Process
 
 The entire analysis process is divided into 3 key steps:
 
-1. Launch Headless Browser
+#### 1. Launch Headless Browser
 
 The tool launches Puppeteer in headless mode (runs in the background without a visible window), creates a new browser page, navigates to the target URL, and waits for network requests to stabilize before starting analysis.
 
