@@ -2,78 +2,69 @@
 Ranbowsix code base for project14, HTML exract, mapping and score.
 
 ## First update<br>
-- index.js: input and output setting<br>
-- src/analyzer.js: analysis the url, exract each features use for futer work<br>
-- output/: jason vision output
+- **index.js**: input and output setting<br>
+- **src/analyzer.js**: analysis the url, exract each features use for futer work<br>
+- **output/**: jason vision output
 
 ## Second update<br>
-- src/scorer.js: calculate cognitive accessibility scores (0-100) based on analyzer data, and map issues to WCAG and ISO 9241-11 standards.<br>
-- index.js: updated to connect the scorer. Now it outputs a frontend-friendly JSON with status (good/warning/poor) and actionable insights.<br>
+- **src/scorer.js**: calculate cognitive accessibility scores (0-100) based on analyzer data, and map issues to WCAG and ISO 9241-11 standards.<br>
+- **index.js**: updated to connect the scorer. Now it outputs a frontend-friendly JSON with status (good/warning/poor) and actionable insights.<br>
 
+## Third Update (Latest)
+- **index.js**: Added File System (`fs`) integration. Reports are now automatically timestamped and saved as `analysis-YYYY-MM-DD...json`.
+- **src/analyzer.js**: 
+    - **Media Intelligence**: Added specific logic to detect `<track>` captions in videos and identify autoplay behaviors.
+    - **DOM Sanitization**: Implemented cloning and noise removal (scripts/styles) for accurate text metrics.
+- **src/mapping.js**: Formalized the dictionary for all 5 dimensions, including weights, WCAG 2.1 success criteria, and ISO 9241 standards.
+- **src/scorer.js**: Refined the `scoreMetric` function to handle three logic types: `lowerBetter`, `higherBetter`, and `range`. Added `generateInsights` to filter critical issues.
 
-## Appendix<br>
-Puppeteer Web Page Analyzer - 
+---
+## 🛠 Installation & Usage
+### 1.Install dependencies:
+ `npm install puppeteer`
+### 2.Run the analyzer:
+ `node index.js [https://example.com](https://example.com)`
 
-A web page automation analysis tool built with Puppeteer (headless browser), designed to extract HTML elements, perform basic statistics (briefly mentioned), and generate structured analysis reports.
+---
+# 📖 Appendix: Technical Documentation
 
-### Core Function
+This appendix provides a deep dive into the architecture, scoring logic, and data extraction methodology used in the **RainbowSix** analyzer.
 
-Automatically open web pages → extract HTML elements → perform basic data statistics (details omitted) → generate structured web page analysis reports.
+---
 
-### Technical Foundation
+## 1. System Architecture & Pipeline
+The application follows a strictly decoupled architecture, separating data collection from evaluation logic.
 
-- Puppeteer (headless browser): For simulating browser behavior and accessing web pages.
+[Image of web scraping and data analysis pipeline architecture]
 
-- Native JavaScript: For DOM operations, element extraction and basic statistics (no third-party libraries required).
+1.  **Orchestrator (`index.js`)**: Handles CLI arguments, manages the asynchronous flow, and persists results to the file system.
+2.  **Data Collector (`src/analyzer.js`)**: A Puppeteer-based engine that interfaces with the Chromium V8 engine to extract DOM properties.
+3.  **Knowledge Base (`src/mapping.js`)**: A dictionary defining thresholds, weights, and regulatory mappings (WCAG/ISO).
+4.  **Scoring Engine (`src/scorer.js`)**: A stateless module that transforms raw data into normalized scores.
 
-### Analysis Process
+---
 
-The entire analysis process is divided into 3 key steps:
+## 2. Advanced Extraction Methodology
 
-#### 1. Launch Headless Browser
+### 2.1 DOM Sanitization
+To prevent "noise" (e.g., JavaScript code, CSS rules) from inflating word counts or complexity ratios, the analyzer performs a **Clone-and-Strip** operation:
+* The `document.body` is cloned into a virtual fragment.
+* `<script>`, `<style>`, and `<noscript>` tags are purged.
+* Only the remaining `innerText` is passed to the NLP (Natural Language Processing) logic.
 
-The tool launches Puppeteer in headless mode (runs in the background without a visible window), creates a new browser page, navigates to the target URL, and waits for network requests to stabilize before starting analysis.
+### 2.2 Visibility Awareness
+Unlike basic scrapers, this tool uses `window.getComputedStyle` to ensure that only elements actually rendered on the screen (where `display !== 'none'`) contribute to the **Visual Density Score**.
 
-#### 2. Core: HTML Extraction & Analysis (page.evaluate)
+---
 
-The page.evaluate() method runs code directly in the browser's web environment, enabling DOM operations and information extraction (similar to developer tools).
+## 3. Scoring Mathematics & Heuristics
 
-##### 2.1 Basic Element Extraction (extractElements)
+The system employs a **Weighted Normalization** algorithm to ensure that critical issues (like missing form labels) impact the overall score more heavily than minor issues.
 
-Uses CSS selectors to capture core page elements, including headings (h1-h6), paragraphs, links, buttons, and image sources.
+### 3.1 The Weighted Average Formula
+For each section (Language, Visual, etc.), the score is calculated as:
 
-##### 2.2 DOM Structure Extraction (extractDOM)
+$$Score_{section} = \frac{\sum_{i=1}^{n} (S_i \times W_i)}{\sum_{i=1}^{n} W_i}$$
 
-Recursively traverses HTML nodes, records tag names and child elements, with limits: maximum depth of 5 levels and up to 10 child elements per node (to avoid excessive resource consumption).
-
-##### 2.3 10-Dimensional Web Page Analysis
-
-The analysis is split into 10 independent modules (statistical details omitted), covering key dimensions of web page quality:
-
-- Language Analysis: Related to text content statistics
-
-- Layout Analysis: Related to page element quantity statistics
-
-- Navigation Analysis: Related to page menu structure statistics
-
-- Visual Hierarchy: Related to page heading structure statistics
-
-- Interaction Analysis: Related to page interactive element statistics
-
-- Animation Analysis: Related to page animated element statistics
-
-- Spacing Analysis: Related to page paragraph layout statistics
-
-- Consistency Analysis: Related to page button style statistics
-
-- Form Analysis: Related to page form element statistics
-
-- Error Prevention: Related to page form validation and error prompt statistics
-
-#### 3. Close Browser & Return Results
-
-After analysis, the browser is closed to release resources. The tool returns a structured JSON object containing the target URL, extracted element data, and 10-dimensional analysis report.
-
-### Output
-
-Structured JSON data, which can be used for web page quality detection, UI analysis, and SEO inspection.
+* **$S_i$**: The normalized score (0-100) of a specific metric.
+*
