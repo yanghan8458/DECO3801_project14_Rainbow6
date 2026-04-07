@@ -10,7 +10,7 @@ Ranbowsix code base for project14, HTML exract, mapping and score.
 - **src/scorer.js**: calculate cognitive accessibility scores (0-100) based on analyzer data, and map issues to WCAG and ISO 9241-11 standards.<br>
 - **index.js**: updated to connect the scorer. Now it outputs a frontend-friendly JSON with status (good/warning/poor) and actionable insights.<br>
 
-## Third Update (Latest)
+## Third Update<br>
 - **index.js**: Added File System (`fs`) integration. Reports are now automatically timestamped and saved as `analysis-YYYY-MM-DD...json`.
 - **src/analyzer.js**: 
     - **Media Intelligence**: Added specific logic to detect `<track>` captions in videos and identify autoplay behaviors.
@@ -18,12 +18,21 @@ Ranbowsix code base for project14, HTML exract, mapping and score.
 - **src/mapping.js**: Formalized the dictionary for all 5 dimensions, including weights, WCAG 2.2 success criteria, and ISO 9241 standards.
 - **src/scorer.js**: Refined the `scoreMetric` function to handle three logic types: `lowerBetter`, `higherBetter`, and `range`. Added `generateInsights` to filter critical issues.
 
+## Fourth Update (Latest)
+- **server.js**: Added a new Express server to act as a bridge between the backend analyzer and the frontend UI.
+  - **API Endpoint**: Exposed a `POST /api/analyze` route that accepts a URL.
+  - **No Local Storage**: Shifted away from `fs.writeFile`. The server now processes the data entirely in-memory and returns the JSON directly over the network, ensuring a seamless, wait-free experience for the frontend.
+  - **Data Packaging**: Bundled the raw `insights` array directly into their corresponding `scores.sections` cards. The frontend team can now render the UI directly without writing complex array-matching logic.
+
 ---
 ## 🛠 Installation & Usage
 ### 1.Install dependencies:
- `npm install puppeteer`
-### 2.Run the analyzer:
- `node index.js [https://example.com](https://example.com)`
+ `npm install puppeteer express cors`
+### 2. Run the local test (Save to file):
+ `node index.js https://example.com`
+ ### 3. Run the Backend API Server (For Frontend UI):
+ `node server.js` 
+ *(Server will run on http://localhost:3000)*
 
 ---
 ## 📖 Appendix: Technical Documentation
@@ -36,7 +45,7 @@ The application follows a strictly decoupled architecture, separating data colle
 
 [Image of web scraping and data analysis pipeline architecture]
 
-1.  **Orchestrator (`index.js`)**: Handles CLI arguments, manages the asynchronous flow, and persists results to the file system.
+1.  **Orchestrator (`index.js` / `server.js`)**: Handles CLI arguments or API requests, manages the asynchronous flow, and formats results.
 2.  **Data Collector (`src/analyzer.js`)**: A Puppeteer-based engine that interfaces with the Chromium V8 engine to extract DOM properties.
 3.  **Knowledge Base (`src/mapping.js`)**: A dictionary defining thresholds, weights, and regulatory mappings (WCAG/ISO).
 4.  **Scoring Engine (`src/scorer.js`)**: A stateless module that transforms raw data into normalized scores.
