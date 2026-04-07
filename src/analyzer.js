@@ -8,175 +8,126 @@ async function analyzePage(url) {
 
   const data = await page.evaluate(() => {
 
-    // ===== Basic element extraction =====
-    function extractElements() {
+    // ===== PURPOSE =====
+    function analyzePurpose() {
       return {
-        headings: [...document.querySelectorAll("h1,h2,h3,h4,h5,h6")]
-          .map(el => el.innerText.trim())
-          .filter(Boolean),
-
-        paragraphs: [...document.querySelectorAll("p")]
-          .map(el => el.innerText.trim())
-          .filter(Boolean),
-
-        links: [...document.querySelectorAll("a")]
-          .map(el => el.href),
-
-        buttons: [...document.querySelectorAll("button")]
-          .map(el => el.innerText.trim()),
-
-        images: [...document.querySelectorAll("img")]
-          .map(el => el.src)
+        titleExists: !!document.title,
+        titleLength: document.title.length,
+        h1Count: document.querySelectorAll("h1").length,
+        headingCount: document.querySelectorAll("h1,h2,h3,h4,h5,h6").length,
+        navCount: document.querySelectorAll("nav").length
       };
     }
 
-    // ===== DOM Structure =====
-    function extractDOM(node, depth = 0) {
-      if (!node || depth > 5) return null;
-
+    // ===== FINDABLE =====
+    function analyzeFindable() {
       return {
-        tag: node.tagName,
-        children: [...node.children].slice(0, 10).map(child =>
-          extractDOM(child, depth + 1)
-        )
+        hasSkipLink: [...document.querySelectorAll("a")]
+          .some(a => a.innerText.toLowerCase().includes("skip")),
+        hasSearch: !!document.querySelector("input[type='search']"),
+        headingCount: document.querySelectorAll("h1,h2,h3,h4,h5,h6").length,
+        navCount: document.querySelectorAll("nav").length,
+        internalLinkCount: [...document.querySelectorAll("a")]
+          .filter(a => a.href.includes(location.hostname)).length,
+        focusVisibleDetected: [...document.querySelectorAll("*")]
+          .some(el => window.getComputedStyle(el).outlineStyle !== "none")
       };
     }
 
-    // ==============================
-    //     Each alalyzer module
-    // ==============================
+    // ===== MEDIA =====
+    function analyzeMedia() {
+      const videos = document.querySelectorAll("video");
 
+      return {
+        videoCount: videos.length,
+        audioCount: document.querySelectorAll("audio").length,
+        captionTrackCount: document.querySelectorAll("track[kind='captions']").length,
+        videosWithCaptionsRatio: videos.length
+          ? document.querySelectorAll("track[kind='captions']").length / videos.length
+          : 0,
+        transcriptLinkCount: [...document.querySelectorAll("a")]
+          .filter(a => a.innerText.toLowerCase().includes("transcript")).length,
+        autoplayMediaCount: document.querySelectorAll("video[autoplay]").length
+      };
+    }
+
+    // ===== LANGUAGE =====
     function analyzeLanguage() {
       const text = document.body.innerText || "";
       const words = text.split(/\s+/).filter(Boolean);
       const sentences = text.split(/[.!?]/).filter(s => s.trim());
 
+      const complexWords = words.filter(w => w.length > 10);
+
       return {
-        wordCount: words.length,
-        sentenceCount: sentences.length,
-        avgSentenceLength: sentences.length
+        readabilityScore: 100 - (complexWords.length / words.length) * 100,
+        sentenceAverageLength: sentences.length
           ? words.length / sentences.length
-          : 0
+          : 0,
+        paragraphAverageLength: document.querySelectorAll("p").length
+          ? words.length / document.querySelectorAll("p").length
+          : 0,
+        complexWordRatio: complexWords.length / words.length,
+        jargonCount: complexWords.length,
+        acronymCount: words.filter(w => w === w.toUpperCase()).length,
+        langAttributeExists: !!document.documentElement.lang
       };
     }
 
-    function analyzeLayout() {
+    // ===== VISUAL =====
+    function analyzeVisual() {
       const elements = document.querySelectorAll("*");
 
       return {
-        totalElements: elements.length
+        lineLengthEstimate: document.body.innerText.length / window.innerWidth,
+        textSpacingSupport: true,
+        reflowSupport: true,
+        contrastIssueCount: 0,
+        visualDensityScore: elements.length,
+        whitespaceScore: document.body.innerText.length / elements.length,
+        fontResizeSupport: true
       };
     }
 
-    function analyzeNavigation() {
-      const navMenus = document.querySelectorAll("nav, ul, ol").length;
-
-      const navDepth = Math.max(
-        ...Array.from(document.querySelectorAll("ul")).map(ul => ul.children.length),
-        0
-      );
-
-      return {
-        menuCount: navMenus,
-        maxDepth: navDepth
-      };
-    }
-
-    function analyzeVisualHierarchy() {
-      const headings = [...document.querySelectorAll("h1,h2,h3,h4,h5,h6")];
-
-      const levels = headings.map(h =>
-        parseInt(h.tagName.substring(1))
-      );
-
-      return {
-        headingCount: headings.length,
-        hierarchyRange: levels.length
-          ? Math.max(...levels) - Math.min(...levels)
-          : 0
-      };
-    }
-
-    function analyzeInteraction() {
-      const links = document.querySelectorAll("a").length;
-      const buttons = document.querySelectorAll("button").length;
-
-      return {
-        linkCount: links,
-        buttonCount: buttons,
-        interactionLoad: links + buttons
-      };
-    }
-
-    function analyzeAnimation() {
-      const elements = [...document.querySelectorAll("*")];
-
-      const animationCount = elements.filter(el => {
-        const style = window.getComputedStyle(el);
-        return style.animationName !== "none" ||
-               style.transitionDuration !== "0s";
-      }).length;
-
-      return {
-        animationCount
-      };
-    }
-
-    function analyzeSpacing() {
-      const paragraphs = [...document.querySelectorAll("p")];
-      const text = document.body.innerText || "";
-      const words = text.split(/\s+/).filter(Boolean);
-
-      return {
-        paragraphCount: paragraphs.length,
-        avgParagraphLength: paragraphs.length
-          ? words.length / paragraphs.length
-          : 0
-      };
-    }
-
-    function analyzeConsistency() {
-      const buttons = [...document.querySelectorAll("button")];
-      const classes = buttons.map(btn => btn.className);
-
-      return {
-        uniqueButtonStyles: new Set(classes).size
-      };
-    }
-
+    // ===== FORMS =====
     function analyzeForms() {
       const inputs = document.querySelectorAll("input, textarea, select");
 
       return {
-        fieldCount: inputs.length
+        formFieldCount: inputs.length,
+        requiredFieldCount: document.querySelectorAll("[required]").length,
+        labelCoverage: document.querySelectorAll("label").length / (inputs.length || 1),
+        hasErrorMessage: document.body.innerText.toLowerCase().includes("error"),
+        hasErrorSuggestion: document.body.innerText.toLowerCase().includes("suggest"),
+        hasReviewStep: document.body.innerText.toLowerCase().includes("review"),
+        hasConfirmationStep: document.body.innerText.toLowerCase().includes("confirm"),
+        hasUndoOption: document.body.innerText.toLowerCase().includes("undo")
       };
     }
 
-    function analyzeErrorPrevention() {
-      const text = document.body.innerText.toLowerCase();
-
+    // ===== DISTRACTION =====
+    function analyzeDistraction() {
       return {
-        requiredFields: document.querySelectorAll("[required]").length,
-        hasErrorMessage: text.includes("error")
+        animationCount: [...document.querySelectorAll("*")]
+          .filter(el => window.getComputedStyle(el).animationName !== "none").length,
+        flashingElementCount: 0,
+        autoplayMediaCount: document.querySelectorAll("video[autoplay]").length,
+        autoUpdatingContentCount: 0,
+        hasPauseControl: document.body.innerText.toLowerCase().includes("pause"),
+        timedInteractionCount: 0,
+        hasExtendTimeOption: document.body.innerText.toLowerCase().includes("extend")
       };
     }
 
-    // ===== Final output (Artifacts structure) =====
     return {
-      elements: extractElements(),
-      domTree: extractDOM(document.body),
-
-      analysis: {
+      artifacts: {
+        purpose: analyzePurpose(),
+        findable: analyzeFindable(),
+        media: analyzeMedia(),
         language: analyzeLanguage(),
-        layout: analyzeLayout(),
-        navigation: analyzeNavigation(),
-        visualHierarchy: analyzeVisualHierarchy(),
-        interaction: analyzeInteraction(),
-        animation: analyzeAnimation(),
-        spacing: analyzeSpacing(),
-        consistency: analyzeConsistency(),
+        visual: analyzeVisual(),
         forms: analyzeForms(),
-        errorPrevention: analyzeErrorPrevention()
+        distraction: analyzeDistraction()
       }
     };
   });
