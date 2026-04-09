@@ -1,0 +1,89 @@
+{
+  "url": "https://uq.edu.au/",
+  "scores": {
+    "overallScore": 48,
+    "overallStatus": "poor",
+    "sections": [
+      {
+        "category": "language",
+        "score": 40,
+        "status": "poor"
+      },
+      {
+        "category": "visual",
+        "score": 81,
+        "status": "good"
+      },
+      {
+        "category": "forms",
+        "score": 17,
+        "status": "poor"
+      },
+      {
+        "category": "media",
+        "score": 100,
+        "status": "good"
+      },
+      {
+        "category": "navigation",
+        "score": 0,
+        "status": "poor"
+      }
+    ]
+  },
+  "insights": [
+    {
+      "section": "language",
+      "metric": "sentenceAverageLength",
+      "value": 55.7,
+      "problem": "Sentences are too long",
+      "suggestion": "Use shorter sentences or bullet points",
+      "mapping": {
+        "wcag": "3.1.5 Reading Level",
+        "iso": "Efficiency"
+      }
+    },
+    {
+      "section": "forms",
+      "metric": "labelCoverage",
+      "value": 0.4,
+      "problem": "Form inputs lack labels",
+      "suggestion": "Add labels to all inputs",
+      "mapping": {
+        "wcag": "3.3.2 Labels or Instructions",
+        "iso": "Effectiveness"
+      }
+    },
+    {
+      "section": "navigation",
+      "metric": "maxDepth",
+      "value": 10,
+      "problem": "Navigation too deep",
+      "suggestion": "Flatten navigation structure",
+      "mapping": {
+        "wcag": "2.4 Navigable",
+        "iso": "Efficiency"
+      }
+    }
+  ],
+  "artifacts": {
+    "language": {
+      "sentenceAverageLength": 55.7,
+      "complexWordRatio": 0.07899461400359066
+    },
+    "visual": {
+      "visualDensityScore": 679,
+      "contrastIssueCount": 0
+    },
+    "forms": {
+      "labelCoverage": 0.4
+    },
+    "media": {
+      "videosWithCaptionsRatio": null,
+      "autoplayMediaCount": 0
+    },
+    "navigation": {
+      "maxDepth": 10
+    }
+  }
+}

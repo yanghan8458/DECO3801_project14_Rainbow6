@@ -3,7 +3,6 @@ const { calculateScores } = require("./src/scorer");
 const { runLighthouseWithPlugin } = require("./lighthouse");
 
 const fs = require("fs").promises;
-const path = require("path");
 
 const url = process.argv[2];
 
@@ -13,8 +12,6 @@ if (!url) {
 }
 
 analyzePage(url).then(async (result) => {
-  
-  result.scores = calculateScores(result.analysis);
 
   const lhr = await runLighthouseWithPlugin(url);
 
@@ -23,23 +20,33 @@ analyzePage(url).then(async (result) => {
       audits: lhr.audits,
     };
 
-  const output = JSON.stringify(result, null, 2);
+  const lhroutput = JSON.stringify(result, null, 2);
+  
+  if (!result.artifacts) {
+    console.error("❌ No artifacts returned");
+    process.exit(1);
+  }
+
+  const scoring = calculateScores(result.artifacts);
+
+  const finalOutput = {
+    url,
+    ...scoring, // Include scores + insights
+    artifacts: result.artifacts
+  };
+
+  const output = JSON.stringify(finalOutput, null, 2);
+
   console.log(output);
+  console.log(lhroutput);
 
-  // create outputs folder
-  const outputDir = path.join(__dirname, "outputs");
-  await fs.mkdir(outputDir, { recursive: true });
-
-  // filename = URL + timestamp
-  const safeUrl = url.replace(/https?:\/\//, "").replace(/[\/:?&=]/g, "_");
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const filename = `analysis-${timestamp}.json`;
 
-  const filename = `${safeUrl}-${timestamp}.json`;
-  const filePath = path.join(outputDir, filename);
+  await fs.writeFile(filename, output, "utf8");
 
-  await fs.writeFile(filePath, output, "utf8");
-  console.log(`✅ Result has been saved to the file: ${filePath}`);
+  console.log(`✅ Saved to ${filename}`);
+
 }).catch(err => {
-  console.error("❌ Analysis failed:", err.message);
-  process.exit(1);
+  console.error("❌ Error:", err.message);
 });
