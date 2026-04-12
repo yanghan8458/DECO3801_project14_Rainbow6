@@ -25,7 +25,7 @@ Ranbowsix code base for project14, HTML exract, mapping and score.
   - **Data Packaging**: Bundled the raw `insights` array directly into their corresponding `scores.sections` cards. The frontend team can now render the UI directly without writing complex array-matching logic.
 
 ---
-## 🛠 Installation & Usage
+## Installation & Usage
 ### 1.Install dependencies:
  `npm install puppeteer express cors`
 ### 2. Run the local test (Save to file):
@@ -35,7 +35,7 @@ Ranbowsix code base for project14, HTML exract, mapping and score.
  *(Server will run on http://localhost:3000)*
 
 ---
-## 📖 Appendix: Technical Documentation
+## Appendix: Technical Documentation
 
 This appendix provides a deep dive into the architecture, scoring logic, and data extraction methodology used in the **RainbowSix** analyzer.
 
@@ -43,10 +43,8 @@ This appendix provides a deep dive into the architecture, scoring logic, and dat
 ### 1. System Architecture & Pipeline
 The application follows a strictly decoupled architecture, separating data collection from evaluation logic.
 
-[Image of web scraping and data analysis pipeline architecture]
-
 1.  **Orchestrator (`index.js` / `server.js`)**: Handles CLI arguments or API requests, manages the asynchronous flow, and formats results.
-2.  **Data Collector (`src/analyzer.js`)**: A Puppeteer-based engine that interfaces with the Chromium V8 engine to extract DOM properties.
+2.  **Data Collector (`src/analyzer.js`)**: A Puppeteer-based engine extract DOM properties in the website. Convert raw DOM data into structured “Artifacts”.
 3.  **Knowledge Base (`src/mapping.js`)**: A dictionary defining thresholds, weights, and regulatory mappings (WCAG/ISO).
 4.  **Scoring Engine (`src/scorer.js`)**: A stateless module that transforms raw data into normalized scores.
 
