@@ -1,4 +1,4 @@
-// src/scorer.js
+// scorer.js
 
 const { mapping } = require("./mapping");
 
@@ -6,11 +6,19 @@ const { mapping } = require("./mapping");
 function scoreMetric(value, config) {
   if (value === null || value === undefined) return null;
 
+  // info-only metrics (e.g. raw counts used for context) — not scored
+  if (config.type === "info") return null;
+
+  // boolean metrics
+  if (config.type === "boolean") {
+    if (typeof value !== "boolean") return null;
+    return value === config.good ? 100 : 0;
+  }
+
   // lower is better
   if (config.type === "lowerBetter") {
     if (value <= config.good) return 100;
     if (value >= config.bad) return 0;
-
     return 100 * (1 - (value - config.good) / (config.bad - config.good));
   }
 
@@ -18,7 +26,6 @@ function scoreMetric(value, config) {
   if (config.type === "higherBetter") {
     if (value >= config.good) return 100;
     if (value <= config.bad) return 0;
-
     return 100 * ((value - config.bad) / (config.good - config.bad));
   }
 
@@ -26,7 +33,6 @@ function scoreMetric(value, config) {
   if (config.type === "range") {
     if (value <= config.ideal) return 100;
     if (value >= config.max) return 0;
-
     return 100 * (1 - (value - config.ideal) / (config.max - config.ideal));
   }
 
