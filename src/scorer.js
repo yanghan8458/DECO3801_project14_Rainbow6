@@ -95,24 +95,40 @@ function generateInsights(artifacts) {
   return insights;
 }
 
+// Weights must sum to 1.0
+const SECTION_WEIGHTS = {
+  purpose:    0.15,
+  findable:   0.15,
+  media:      0.10,
+  language:   0.20,
+  visual:     0.15,
+  assistance: 0.10,
+  distraction: 0.15
+};
+
 // ===== main scoring =====
 function calculateScores(artifacts) {
   const sections = [];
-  let total = 0;
+  let weightedTotal = 0;
+  let weightSum = 0;
 
   for (const section in artifacts) {
     const score = scoreSection(artifacts[section]);
+    const weight = SECTION_WEIGHTS[section] ?? (1 / Object.keys(artifacts).length);
 
     sections.push({
       category: section,
       score,
+      weight,
       status: score >= 80 ? "good" : score >= 60 ? "warning" : "poor"
     });
 
-    total += score;
+    weightedTotal += score * weight;
+    weightSum += weight;
   }
 
-  const overallScore = Math.round(total / sections.length);
+  // Normalise in case weights don't sum to exactly 1 (e.g. unknown sections)
+  const overallScore = Math.round(weightedTotal / weightSum);
 
   return {
     scores: {
