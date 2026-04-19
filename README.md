@@ -18,11 +18,17 @@ Ranbowsix code base for project14, HTML exract, mapping and score.
 - **src/mapping.js**: Formalized the dictionary for all 5 dimensions, including weights, WCAG 2.2 success criteria, and ISO 9241 standards.
 - **src/scorer.js**: Refined the `scoreMetric` function to handle three logic types: `lowerBetter`, `higherBetter`, and `range`. Added `generateInsights` to filter critical issues.
 
-## Fourth Update (Latest)
+## Fourth Update 
 - **server.js**: Added a new Express server to act as a bridge between the backend analyzer and the frontend UI.
   - **API Endpoint**: Exposed a `POST /api/analyze` route that accepts a URL.
   - **No Local Storage**: Shifted away from `fs.writeFile`. The server now processes the data entirely in-memory and returns the JSON directly over the network, ensuring a seamless, wait-free experience for the frontend.
   - **Data Packaging**: Bundled the raw `insights` array directly into their corresponding `scores.sections` cards. The frontend team can now render the UI directly without writing complex array-matching logic.
+ 
+## Fifth Update (Latest)
+- **src/analyzer.js**: Reconstruct the original 5 dimensions into 7, and add multiple independent functions to each dimension.
+- **src/mapping.js**: Added support for the `boolean` type (`titleExists`, `hasSkipLink`, `langAttributeExists`, etc.), as well as the `info` type for purely statistical fields (`videoCount`, `formFieldCount`, etc., which do not participate in scoring).
+- **src/scorer.js**: In `scoreMetric`, handling for two types, `boolean` and `info`, has been added, and the `overallScor`e has been modified to be scored by weight.
+
 
 ---
 ## Installation & Usage
