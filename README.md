@@ -27,7 +27,7 @@ Ranbowsix code base for project14, HTML exract, mapping and score.
 ## Fifth Update (Latest)
 - **src/analyzer.js**: Reconstruct the original 5 dimensions into 7, and add multiple independent functions to each dimension.
 - **src/mapping.js**: Added support for the `boolean` type (`titleExists`, `hasSkipLink`, `langAttributeExists`, etc.), as well as the `info` type for purely statistical fields (`videoCount`, `formFieldCount`, etc., which do not participate in scoring).
-- **src/scorer.js**: In `scoreMetric`, handling for two types, `boolean` and `info`, has been added, and the `overallScor`e has been modified to be scored by weight.
+- **src/scorer.js**: In `scoreMetric`, two types `boolean` and `info` has been added, and the `overallScore` has been modified to be scored by weight.
 
 
 ---
