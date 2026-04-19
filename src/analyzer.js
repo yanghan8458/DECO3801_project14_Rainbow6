@@ -5,11 +5,8 @@ const puppeteer = require("puppeteer");
 async function analyzePage(url) {
   let browser;
   try {
-    // Launch browser with basic sandbox safety
     browser = await puppeteer.launch({ headless: true });
     const page = await browser.newPage();
-
-    // Set a reasonable timeout and wait for network to settle
     await page.goto(url, { waitUntil: "networkidle2", timeout: 60000 });
 
     const artifacts = await page.evaluate(() => {
@@ -19,43 +16,96 @@ async function analyzePage(url) {
         const title = document.title || "";
         const h1s = document.querySelectorAll("h1");
         const headings = document.querySelectorAll("h1, h2, h3, h4, h5, h6");
-        const navs = document.querySelectorAll("nav");
+
+        // 2.4.2 Page Titled
+        const titleWords = title.trim().split(/\s+/).filter(Boolean);
+        const genericPatterns = /^(home|index|untitled|welcome|page)$/i;
+        const pageTitleMeaningfulScore = (() => {
+          if (!title.trim()) return 0;
+          if (titleWords.length < 2) return 30;
+          if (genericPatterns.test(title.trim())) return 40;
+          if (titleWords.length >= 3 && (title.includes("|") || title.includes("-") || title.includes(":"))) return 100;
+          if (titleWords.length >= 2) return 80;
+          return 60;
+        })();
+
+        // 2.4.6 Headings and Labels
+        const headingArr = Array.from(headings);
+        const meaningfulHeadings = headingArr.filter(h => {
+          const text = (h.innerText || h.textContent || "").trim();
+          return text.split(/\s+/).filter(Boolean).length >= 2 && text.length > 4;
+        });
+        const headingMeaningfulScore = headingArr.length
+          ? Math.round((meaningfulHeadings.length / headingArr.length) * 100)
+          : 100;
+
+        const allLabels = Array.from(document.querySelectorAll("label"));
+        const labelCount = allLabels.length;
+
+        const inputs = Array.from(document.querySelectorAll(
+          "input:not([type='hidden']), textarea, select"
+        ));
+        const labeledInputs = inputs.filter(input => {
+          if (input.closest("label")) return true;
+          const id = input.id;
+          if (id && document.querySelector(`label[for="${id}"]`)) return true;
+          if (input.getAttribute("aria-label")) return true;
+          if (input.getAttribute("aria-labelledby")) return true;
+          return false;
+        });
+        const inputWithLabelRatio = inputs.length
+          ? labeledInputs.length / inputs.length
+          : 1;
+
+        const meaningfulLabels = allLabels.filter(l => {
+          const text = (l.innerText || l.textContent || "").trim().replace(/\*/g, "").trim();
+          return text.length >= 2;
+        });
+        const labelMeaningfulScore = labelCount
+          ? Math.round((meaningfulLabels.length / labelCount) * 100)
+          : 100;
 
         return {
           titleExists: title.trim().length > 0,
           titleLength: title.trim().length,
+          pageTitleMeaningfulScore,
           h1Count: h1s.length,
           headingCount: headings.length,
-          navCount: navs.length
+          headingMeaningfulScore,
+          labelCount,
+          inputWithLabelRatio,
+          labelMeaningfulScore
         };
       }
 
       /** 2. Findable Analysis */
       function analyzeFindable() {
-        // Check for skip links (href="#main", "#content", etc.)
         const allLinks = Array.from(document.querySelectorAll("a[href]"));
+
+        // 2.4.1 Bypass Blocks
         const hasSkipLink = allLinks.some(a =>
           /^#(main|content|skip|primary|maincontent)/i.test(a.getAttribute("href"))
         );
+        const hasMainLandmark = !!document.querySelector("main, [role='main']");
 
-        // Check for search input
+        // 2.4.5 Multiple Ways
         const hasSearch =
           !!document.querySelector("input[type='search']") ||
           !!document.querySelector("[role='search']") ||
           !!document.querySelector("form[role='search']");
 
-        const headings = document.querySelectorAll("h1, h2, h3, h4, h5, h6");
-        const navs = document.querySelectorAll("nav");
+        const navCount = document.querySelectorAll("nav").length;
 
-        // Count internal links (same-origin or relative)
         const internalLinkCount = allLinks.filter(a => {
           const href = a.getAttribute("href") || "";
           return href.startsWith("/") || href.startsWith("#") ||
             href.startsWith(window.location.origin);
         }).length;
 
-        // Focus visible: check if any element has a non-none outline on :focus
-        // Approximated by checking stylesheet rules for :focus outline
+        const hasBreadcrumb =
+          !!document.querySelector("[aria-label*='breadcrumb' i], [class*='breadcrumb' i], [itemtype*='BreadcrumbList']");
+
+        // 2.4.7 Focus Visible
         let focusVisibleDetected = false;
         try {
           for (const sheet of Array.from(document.styleSheets)) {
@@ -77,10 +127,11 @@ async function analyzePage(url) {
 
         return {
           hasSkipLink,
+          hasMainLandmark,
           hasSearch,
-          headingCount: headings.length,
-          navCount: navs.length,
+          navCount,
           internalLinkCount,
+          hasBreadcrumb,
           focusVisibleDetected
         };
       }
@@ -90,6 +141,7 @@ async function analyzePage(url) {
         const videos = Array.from(document.querySelectorAll("video"));
         const audios = Array.from(document.querySelectorAll("audio"));
 
+        // 1.2.2 Captions
         const captionTrackCount = videos.reduce((count, v) => {
           return count + v.querySelectorAll("track[kind='captions']").length;
         }, 0);
@@ -98,7 +150,7 @@ async function analyzePage(url) {
           ? videos.filter(v => v.querySelector("track[kind='captions']")).length / videos.length
           : null;
 
-        // Transcript links: look for links near media containing "transcript"
+        // 1.2.3 Audio Description
         const allLinks = Array.from(document.querySelectorAll("a"));
         const transcriptLinkCount = allLinks.filter(a =>
           /transcript/i.test(a.textContent) || /transcript/i.test(a.getAttribute("href") || "")
@@ -121,10 +173,8 @@ async function analyzePage(url) {
 
       /** 4. Clear Language Analysis */
       function analyzeLanguage() {
-        // Clone body to remove script/style tags so they don't pollute word counts
         const clone = document.body.cloneNode(true);
-        const noise = clone.querySelectorAll("script, style, noscript");
-        noise.forEach(el => el.remove());
+        clone.querySelectorAll("script, style, noscript").forEach(el => el.remove());
 
         const text = clone.innerText || "";
         const words = text.split(/\s+/).filter(Boolean);
@@ -147,8 +197,6 @@ async function analyzePage(url) {
           ? words.filter(w => w.length > 10).length / words.length
           : 0;
 
-        // Flesch-Kincaid readability approximation
-        // FK Grade = 0.39 * (words/sentences) + 11.8 * (syllables/words) - 15.59
         function countSyllables(word) {
           word = word.toLowerCase().replace(/[^a-z]/g, "");
           if (!word) return 0;
@@ -162,7 +210,6 @@ async function analyzePage(url) {
           ? 0.39 * (words.length / sentences.length) +
             11.8 * (totalSyllables / words.length) - 15.59
           : 0;
-        // Convert FK grade to a 0–100 readability score (lower grade = higher score)
         const readabilityScore = Math.max(0, Math.min(100, Math.round(100 - fkGrade * 5)));
 
         const langAttributeExists = !!document.documentElement.getAttribute("lang");
@@ -178,7 +225,7 @@ async function analyzePage(url) {
 
       /** 5. Visual Presentation Analysis */
       function analyzeVisual() {
-        // Filter for visible elements only to get an accurate density score
+        // 1.4.8 Visual Presentation
         const elements = Array.from(document.querySelectorAll("*")).filter(el => {
           const style = window.getComputedStyle(el);
           return (
@@ -188,67 +235,32 @@ async function analyzePage(url) {
           );
         });
 
-        // Estimate line length: average ch width of paragraph elements
         const paragraphs = Array.from(document.querySelectorAll("p"));
         const lineLengthEstimate = paragraphs.length
           ? paragraphs.reduce((sum, p) => {
               const w = p.getBoundingClientRect().width;
               const fs = parseFloat(window.getComputedStyle(p).fontSize) || 16;
-              return sum + w / (fs * 0.5); // rough char estimate
+              return sum + w / (fs * 0.5);
             }, 0) / paragraphs.length
           : 0;
 
-        // Text spacing support: check if any style sets letter-spacing / line-height
-        let textSpacingSupport = false;
         let fontResizeSupport = false;
         try {
           for (const sheet of Array.from(document.styleSheets)) {
             try {
               for (const rule of Array.from(sheet.cssRules || [])) {
-                if (rule.style) {
-                  if (rule.style.letterSpacing || rule.style.lineHeight) {
-                    textSpacingSupport = true;
-                  }
-                  if (rule.style.fontSize && rule.style.fontSize.includes("em")) {
-                    fontResizeSupport = true;
-                  }
+                if (rule.style && rule.style.fontSize && rule.style.fontSize.includes("em")) {
+                  fontResizeSupport = true;
                 }
               }
             } catch (_) { /* cross-origin sheet, skip */ }
           }
         } catch (_) { /* styleSheets access denied */ }
 
-        // Reflow support: check viewport meta for width=device-width
-        const viewportMeta = document.querySelector("meta[name='viewport']");
-        const reflowSupport = viewportMeta
-          ? /width=device-width/i.test(viewportMeta.getAttribute("content") || "")
-          : false;
-
-        // Whitespace score: ratio of empty/whitespace-only text nodes (rough proxy)
-        const allParas = document.querySelectorAll("p, li, td, th");
-        const whitespaceScore = allParas.length
-          ? Math.min(
-              100,
-              Math.round(
-                (Array.from(allParas).filter(el => {
-                  const style = window.getComputedStyle(el);
-                  const lh = parseFloat(style.lineHeight);
-                  const fs = parseFloat(style.fontSize);
-                  return lh / fs >= 1.4;
-                }).length /
-                  allParas.length) *
-                  100
-              )
-            )
-          : 100;
-
         return {
           lineLengthEstimate,
-          textSpacingSupport,
-          reflowSupport,
           contrastIssueCount: 0, // placeholder for future expansion
           visualDensityScore: elements.length,
-          whitespaceScore,
           fontResizeSupport
         };
       }
@@ -263,66 +275,30 @@ async function analyzePage(url) {
           "input[required], textarea[required], select[required]"
         );
 
-        // Error message: look for ARIA live regions or common error class patterns
+        // 3.3.3 Error Suggestion
         const hasErrorMessage =
           !!document.querySelector("[role='alert'], [aria-live='assertive'], .error, .error-message, [aria-invalid='true']");
 
-        // Error suggestion: look for helper text or description linked via aria-describedby
-        const hasErrorSuggestion =
-          !!document.querySelector("[aria-describedby], .field-hint, .helper-text, .error-suggestion");
-
-        // Review step: look for a step/review/summary page pattern
-        const bodyText = (document.body.innerText || "").toLowerCase();
-        const hasReviewStep =
-          /review|confirm your|check your|summary/i.test(bodyText);
-
-        // Confirmation step: thank-you or success messaging
-        const hasConfirmationStep =
-          /thank you|submission received|successfully submitted|order confirmed/i.test(bodyText);
-
-        // Undo option: look for undo/cancel/go back controls
-        const hasUndoOption =
-          !!document.querySelector("[aria-label*='undo' i], button.undo, a.cancel") ||
-          /undo|cancel|go back/i.test(bodyText);
-
         return {
           formFieldCount: inputs.length,
-          requiredFieldCount: requiredFields.length,
           labelCoverage: inputs.length ? labels.length / inputs.length : 1,
           hasErrorMessage,
-          hasErrorSuggestion,
-          hasReviewStep,
-          hasConfirmationStep,
-          hasUndoOption
+          requiredFieldCount: requiredFields.length
         };
       }
 
       /** 7. Distraction Analysis */
       function analyzeDistraction() {
-        // Animated / moving elements: CSS animations and transitions
+        // 2.2.2 Pause, Stop, Hide
         const allElements = Array.from(document.querySelectorAll("*"));
         const animationCount = allElements.filter(el => {
           const style = window.getComputedStyle(el);
           return (
-            style.animationName && style.animationName !== "none" ||
+            (style.animationName && style.animationName !== "none") ||
             (style.transitionDuration && style.transitionDuration !== "0s")
           );
         }).length;
 
-        // Flashing: elements with very fast animation (< 333ms = > 3Hz)
-        const flashingElementCount = allElements.filter(el => {
-          const style = window.getComputedStyle(el);
-          const dur = parseFloat(style.animationDuration);
-          return !isNaN(dur) && dur > 0 && dur < 0.334;
-        }).length;
-
-        // Auto-updating: look for meta refresh or JS-driven countdowns
-        const metaRefresh = document.querySelector("meta[http-equiv='refresh']");
-        const autoUpdatingContentCount =
-          (metaRefresh ? 1 : 0) +
-          document.querySelectorAll("[aria-live='polite'], [aria-live='assertive']").length;
-
-        // Videos/audio with autoplay (shared with media section, kept here for distraction scoring)
         const videos = Array.from(document.querySelectorAll("video"));
         const audios = Array.from(document.querySelectorAll("audio"));
         const autoplayMediaCount = [
@@ -330,32 +306,21 @@ async function analyzePage(url) {
           ...audios.filter(a => a.autoplay)
         ].length;
 
-        // Pause control: look for pause/stop/hide buttons near animated content
+        const metaRefresh = document.querySelector("meta[http-equiv='refresh']");
+        const autoUpdatingContentCount =
+          (metaRefresh ? 1 : 0) +
+          document.querySelectorAll("[aria-live='polite'], [aria-live='assertive']").length;
+
         const hasPauseControl =
           !!document.querySelector(
             "button[aria-label*='pause' i], button[aria-label*='stop' i], button.pause, button.stop, [role='button'][aria-label*='pause' i]"
           );
 
-        // Timed interactions: session timeout warnings, countdown timers
-        const bodyText = (document.body.innerText || "").toLowerCase();
-        const timedInteractionCount = (
-          (document.querySelectorAll("[data-countdown], .countdown, .timer").length) +
-          (/session.*expire|time.*limit|time.*remaining/i.test(bodyText) ? 1 : 0)
-        );
-
-        // Option to extend time
-        const hasExtendTimeOption =
-          /extend.*time|more time|need more time|session.*extend/i.test(bodyText) ||
-          !!document.querySelector("[aria-label*='extend' i]");
-
         return {
           animationCount,
-          flashingElementCount,
           autoplayMediaCount,
           autoUpdatingContentCount,
-          hasPauseControl,
-          timedInteractionCount,
-          hasExtendTimeOption
+          hasPauseControl
         };
       }
 
@@ -376,7 +341,6 @@ async function analyzePage(url) {
     console.error(`Analysis failed: ${error.message}`);
     return { url, error: error.message };
   } finally {
-    // Ensure browser always closes to prevent memory leaks
     if (browser) await browser.close();
   }
 }
