@@ -66,24 +66,53 @@ To prevent "noise" (e.g., JavaScript code, CSS rules) from inflating word counts
 Unlike basic scrapers, this tool uses `window.getComputedStyle` to ensure that only elements actually rendered on the screen (where `display !== 'none'`) contribute to the **Visual Density Score**.
 
 
-### 3. Scoring Mathematics & Heuristics
+### Scoring System
 
-The system employs a **Weighted Normalization** algorithm to ensure that critical issues (like missing form labels) impact the overall score more heavily than minor issues.
+#### 3.1 Section Score — Weighted Average
 
-#### 3.1 The Weighted Average Formula
-For each section (Language, Visual, etc.), the score is calculated as:
+For each section, the score is calculated as:
 
 $$Score_{section} = \frac{\sum_{i=1}^{n} (S_i \times W_i)}{\sum_{i=1}^{n} W_i}$$
 
-* **$S_i$**: The normalized score (0-100) of a specific metric.
-* **$W_i$**: The assigned weight from `mapping.js`.
+- **$S_i$** — Normalised score (0–100) of a specific metric
+- **$W_i$** — Weight assigned to that metric in `mapping.js`
 
-#### 3.2 Normalized Metric Types
-| Logic Type | Mathematical Description | Example |
+
+#### 3.2 Normalised Metric Types
+
+| Type | Formula | Example |
 | :--- | :--- | :--- |
-| **Lower Better** | $100 \times (1 - \frac{value - good}{bad - good})$ | `complexWordRatio` |
-| **Higher Better** | $100 \times (\frac{value - bad}{good - bad})$ | `labelCoverage` |
-| **Range Optimal** | $100 \times (1 - \frac{value - ideal}{max - ideal})$ | `visualDensityScore` |
+| **Lower better** | $100 \times \left(1 - \dfrac{value - good}{bad - good}\right)$ | `complexWordRatio` |
+| **Higher better** | $100 \times \dfrac{value - bad}{good - bad}$ | `labelCoverage` |
+| **Range optimal** | $100 \times \left(1 - \dfrac{value - ideal}{max - ideal}\right)$ | `visualDensityScore` |
+| **Boolean** | `value === good ? 100 : 0` | `titleExists` |
+| **Info** | `null` — not scored | `videoCount` |
+
+> All scored types clamp output to `[0, 100]`. Metrics returning `null` are excluded from the weighted sum entirely.
+
+
+#### 3.3 Overall Score — Section Weights
+
+$$Score_{overall} = \frac{\sum (Score_{section} \times weight_{section})}{\sum weight_{section}}$$
+
+| Section | Weight |
+| :--- | :---: |
+| Clear Language | 0.20 |
+| Clear Purpose | 0.15 |
+| Findable | 0.15 |
+| Visual Presentation | 0.15 |
+| Distraction | 0.15 |
+| Media | 0.10 |
+| Assistance & Support | 0.10 |
+| **Total** | **1.00** |
+
+##### Status thresholds
+
+| Status | Score range |
+| :--- | :--- |
+| ✅ Good | ≥ 80 |
+| ⚠️ Warning | 60 – 79 |
+| ❌ Poor | < 60 |
 
 ### 4. Regulatory & Standards Mapping (WCAG 2.2 & ISO 9241-11)
 
