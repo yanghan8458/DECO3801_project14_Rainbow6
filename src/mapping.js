@@ -3,6 +3,8 @@
 const mapping = {
 
   // ===== 1. CLEAR PURPOSE =====
+
+  // 2.4.2 Page Titled
   titleExists: {
     type: "boolean",
     good: true,
@@ -24,6 +26,18 @@ const mapping = {
     iso: "Effectiveness"
   },
 
+  pageTitleMeaningfulScore: {
+    type: "higherBetter",
+    good: 80,
+    bad: 0,
+    weight: 1.5,
+    problem: "Page title is not descriptive enough",
+    suggestion: "Use a specific, meaningful title that describes the page content (e.g. 'Checkout – My Store' not 'Home')",
+    wcag: "2.4.2 Page Titled",
+    iso: "Effectiveness"
+  },
+
+  // 2.4.6 Headings and Labels
   h1Count: {
     type: "range",
     ideal: 1,
@@ -46,19 +60,52 @@ const mapping = {
     iso: "Efficiency"
   },
 
-  navCount: {
-    type: "range",
-    ideal: 1,
-    max: 4,
-    weight: 1,
-    problem: "No navigation landmark or too many nav regions",
-    suggestion: "Use one primary <nav> element for consistent navigation",
-    wcag: "3.2.3 Consistent Navigation",
-    iso: "Efficiency"
+  headingMeaningfulScore: {
+    type: "higherBetter",
+    good: 80,
+    bad: 0,
+    weight: 1.2,
+    problem: "Headings are not descriptive enough",
+    suggestion: "Use meaningful heading text that summarises the section content",
+    wcag: "2.4.6 Headings and Labels",
+    iso: "Effectiveness"
+  },
+
+  labelCount: {
+    type: "info",
+    weight: 0,
+    problem: "",
+    suggestion: "",
+    wcag: "2.4.6 Headings and Labels",
+    iso: "Effectiveness"
+  },
+
+  inputWithLabelRatio: {
+    type: "higherBetter",
+    good: 1,
+    bad: 0.3,
+    weight: 1.5,
+    problem: "Form inputs are missing associated labels",
+    suggestion: "Associate every input with a <label> using for/id, aria-label, or aria-labelledby",
+    wcag: "2.4.6 Headings and Labels",
+    iso: "Effectiveness"
+  },
+
+  labelMeaningfulScore: {
+    type: "higherBetter",
+    good: 90,
+    bad: 20,
+    weight: 1.2,
+    problem: "Labels are not descriptive enough",
+    suggestion: "Use clear, descriptive label text rather than placeholders or symbols alone",
+    wcag: "2.4.6 Headings and Labels",
+    iso: "Effectiveness"
   },
 
 
   // ===== 2. FINDABLE =====
+
+  // 2.4.1 Bypass Blocks
   hasSkipLink: {
     type: "boolean",
     good: true,
@@ -69,6 +116,17 @@ const mapping = {
     iso: "Efficiency"
   },
 
+  hasMainLandmark: {
+    type: "boolean",
+    good: true,
+    weight: 1.5,
+    problem: "No <main> landmark detected",
+    suggestion: "Add a <main> element or role='main' to identify the primary content area",
+    wcag: "2.4.1 Bypass Blocks",
+    iso: "Efficiency"
+  },
+
+  // 2.4.5 Multiple Ways
   hasSearch: {
     type: "boolean",
     good: true,
@@ -79,9 +137,16 @@ const mapping = {
     iso: "Efficiency"
   },
 
-  // headingCount already defined in purpose section above
-
-  // navCount already defined in purpose section above
+  navCount: {
+    type: "range",
+    ideal: 1,
+    max: 4,
+    weight: 1,
+    problem: "No navigation landmark or too many nav regions",
+    suggestion: "Use one primary <nav> element for consistent navigation",
+    wcag: "2.4.5 Multiple Ways",
+    iso: "Efficiency"
+  },
 
   internalLinkCount: {
     type: "range",
@@ -94,6 +159,17 @@ const mapping = {
     iso: "Efficiency"
   },
 
+  hasBreadcrumb: {
+    type: "boolean",
+    good: true,
+    weight: 1,
+    problem: "No breadcrumb navigation detected",
+    suggestion: "Add breadcrumb navigation to help users understand their location within the site",
+    wcag: "2.4.5 Multiple Ways",
+    iso: "Efficiency"
+  },
+
+  // 2.4.7 Focus Visible
   focusVisibleDetected: {
     type: "boolean",
     good: true,
@@ -106,6 +182,8 @@ const mapping = {
 
 
   // ===== 3. MEDIA =====
+
+  // 1.2.1 Audio-only and Video-only
   videoCount: {
     type: "info",
     weight: 0,
@@ -124,6 +202,7 @@ const mapping = {
     iso: "Effectiveness"
   },
 
+  // 1.2.2 Captions
   captionTrackCount: {
     type: "info",
     weight: 0,
@@ -144,6 +223,7 @@ const mapping = {
     iso: "Effectiveness"
   },
 
+  // 1.2.3 Audio Description
   transcriptLinkCount: {
     type: "higherBetter",
     good: 1,
@@ -162,7 +242,7 @@ const mapping = {
     weight: 1.2,
     problem: "Too many autoplay media elements",
     suggestion: "Disable autoplay or add user controls",
-    wcag: "2.2.2 Pause, Stop, Hide",
+    wcag: "1.2.3 Audio Description",
     iso: "Satisfaction"
   },
 
@@ -224,6 +304,8 @@ const mapping = {
 
 
   // ===== 5. VISUAL PRESENTATION =====
+
+  // 1.4.8 Visual Presentation
   lineLengthEstimate: {
     type: "range",
     ideal: 66,
@@ -235,26 +317,6 @@ const mapping = {
     iso: "Satisfaction"
   },
 
-  textSpacingSupport: {
-    type: "boolean",
-    good: true,
-    weight: 1.2,
-    problem: "No text spacing (letter-spacing / line-height) detected in styles",
-    suggestion: "Ensure styles allow adequate letter-spacing and line-height",
-    wcag: "1.4.12 Text Spacing",
-    iso: "Effectiveness"
-  },
-
-  reflowSupport: {
-    type: "boolean",
-    good: true,
-    weight: 1.5,
-    problem: "Page may not support reflow at 320px width",
-    suggestion: "Add a responsive viewport meta tag with width=device-width",
-    wcag: "1.4.10 Reflow",
-    iso: "Effectiveness"
-  },
-
   contrastIssueCount: {
     type: "lowerBetter",
     good: 0,
@@ -262,7 +324,7 @@ const mapping = {
     weight: 1.2,
     problem: "Contrast issues detected",
     suggestion: "Improve text/background contrast",
-    wcag: "1.4 Contrast",
+    wcag: "1.4.8 Visual Presentation",
     iso: "Effectiveness"
   },
 
@@ -277,17 +339,6 @@ const mapping = {
     iso: "Efficiency"
   },
 
-  whitespaceScore: {
-    type: "higherBetter",
-    good: 80,
-    bad: 30,
-    weight: 1,
-    problem: "Insufficient whitespace / line-height in text blocks",
-    suggestion: "Increase line-height to at least 1.5× font-size in paragraphs",
-    wcag: "1.4.8 Visual Presentation",
-    iso: "Satisfaction"
-  },
-
   fontResizeSupport: {
     type: "boolean",
     good: true,
@@ -300,16 +351,9 @@ const mapping = {
 
 
   // ===== 6. ASSISTANCE & SUPPORT =====
-  formFieldCount: {
-    type: "info",
-    weight: 0,
-    problem: "",
-    suggestion: "",
-    wcag: "3.3.2 Labels or Instructions",
-    iso: "Effectiveness"
-  },
 
-  requiredFieldCount: {
+  // 3.3.2 Labels or Instructions
+  formFieldCount: {
     type: "info",
     weight: 0,
     problem: "",
@@ -329,58 +373,33 @@ const mapping = {
     iso: "Effectiveness"
   },
 
+  // 3.3.3 Error Suggestion
   hasErrorMessage: {
     type: "boolean",
     good: true,
     weight: 1.5,
     problem: "No error message pattern detected",
     suggestion: "Add ARIA live regions or visible error messages for form validation",
-    wcag: "3.3.1 Error Identification",
-    iso: "Effectiveness"
-  },
-
-  hasErrorSuggestion: {
-    type: "boolean",
-    good: true,
-    weight: 1.2,
-    problem: "No error suggestion pattern detected",
-    suggestion: "Provide descriptive suggestions (aria-describedby or helper text) when inputs fail",
     wcag: "3.3.3 Error Suggestion",
     iso: "Effectiveness"
   },
 
-  hasReviewStep: {
-    type: "boolean",
-    good: true,
+  // 3.3.4 Error Prevention
+  requiredFieldCount: {
+    type: "lowerBetter",
+    good: 0,
+    bad: 10,
     weight: 1,
-    problem: "No review/summary step detected before submission",
-    suggestion: "Add a review step so users can check their input before submitting",
+    problem: "Too many required fields may overwhelm users",
+    suggestion: "Minimise required fields and clearly mark which are mandatory",
     wcag: "3.3.4 Error Prevention",
     iso: "Effectiveness"
   },
 
-  hasConfirmationStep: {
-    type: "boolean",
-    good: true,
-    weight: 1,
-    problem: "No confirmation message detected after submission",
-    suggestion: "Show a confirmation message after successful form submission",
-    wcag: "3.3.4 Error Prevention",
-    iso: "Satisfaction"
-  },
-
-  hasUndoOption: {
-    type: "boolean",
-    good: true,
-    weight: 1,
-    problem: "No undo or cancel option detected",
-    suggestion: "Provide undo, cancel, or 'go back' options where possible",
-    wcag: "3.3.4 Error Prevention",
-    iso: "Satisfaction"
-  },
-
 
   // ===== 7. DISTRACTION =====
+
+  // 2.2.2 Pause, Stop, Hide
   animationCount: {
     type: "lowerBetter",
     good: 5,
@@ -392,18 +411,16 @@ const mapping = {
     iso: "Satisfaction"
   },
 
-  flashingElementCount: {
+  autoplayMediaCount: {
     type: "lowerBetter",
     good: 0,
-    bad: 3,
-    weight: 2,
-    problem: "Potentially flashing elements detected (>3Hz)",
-    suggestion: "Remove or slow down animations that flash more than 3 times per second",
-    wcag: "2.3.1 Three Flashes or Below Threshold",
-    iso: "Safety"
+    bad: 5,
+    weight: 1.2,
+    problem: "Too many autoplay media elements",
+    suggestion: "Disable autoplay or add user controls",
+    wcag: "2.2.2 Pause, Stop, Hide",
+    iso: "Satisfaction"
   },
-
-  // autoplayMediaCount already defined in media section above
 
   autoUpdatingContentCount: {
     type: "lowerBetter",
@@ -424,27 +441,6 @@ const mapping = {
     suggestion: "Add pause/stop/hide controls near any moving or auto-playing content",
     wcag: "2.2.2 Pause, Stop, Hide",
     iso: "Satisfaction"
-  },
-
-  timedInteractionCount: {
-    type: "lowerBetter",
-    good: 0,
-    bad: 3,
-    weight: 1.2,
-    problem: "Timed interactions or session countdowns detected",
-    suggestion: "Allow users to turn off or adjust any time limits",
-    wcag: "2.2.1 Timing Adjustable",
-    iso: "Effectiveness"
-  },
-
-  hasExtendTimeOption: {
-    type: "boolean",
-    good: true,
-    weight: 1,
-    problem: "No option to extend session or time limit found",
-    suggestion: "Provide a mechanism to extend time limits with a simple action",
-    wcag: "2.2.1 Timing Adjustable",
-    iso: "Effectiveness"
   }
 };
 
