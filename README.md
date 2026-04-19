@@ -66,7 +66,7 @@ To prevent "noise" (e.g., JavaScript code, CSS rules) from inflating word counts
 Unlike basic scrapers, this tool uses `window.getComputedStyle` to ensure that only elements actually rendered on the screen (where `display !== 'none'`) contribute to the **Visual Density Score**.
 
 
-### Scoring System
+### 3. Scoring System
 
 #### 3.1 Section Score — Weighted Average
 
