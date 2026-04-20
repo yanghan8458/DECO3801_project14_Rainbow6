@@ -256,6 +256,11 @@ const mapping = {
     iso: "Effectiveness"
   },
 
+  // NOTE: autoplayMediaCount is defined here (Section 3 — Media) and is the
+  // canonical definition. The distraction analyser (Section 7) also returns
+  // this value so the scorer can use it, but the mapping key must NOT be
+  // duplicated below — a duplicate key in a JS object silently drops the
+  // first definition, which would lose this WCAG attribution.
   autoplayMediaCount: {
     type: "lowerBetter",
     good: 0,
@@ -263,7 +268,7 @@ const mapping = {
     weight: 1.2,
     problem: "Too many autoplay media elements",
     suggestion: "Disable autoplay or add user controls",
-    wcag: "1.2.3 Audio Description",
+    wcag: "1.2.2 Captions / 2.2.2 Pause, Stop, Hide",
     iso: "Satisfaction"
   },
 
@@ -466,24 +471,24 @@ const mapping = {
   // ===== 7. DISTRACTION =====
 
   // 2.2.2 Pause, Stop, Hide
-  animationCount: {
-    type: "lowerBetter",
-    good: 5,
-    bad: 30,
-    weight: 1.2,
-    problem: "High number of animated elements detected",
-    suggestion: "Reduce animations or respect the prefers-reduced-motion media query",
-    wcag: "2.2.2 Pause, Stop, Hide",
-    iso: "Satisfaction"
-  },
-
-  autoplayMediaCount: {
+  gifCount: {
     type: "lowerBetter",
     good: 0,
     bad: 5,
     weight: 1.2,
-    problem: "Too many autoplay media elements",
-    suggestion: "Disable autoplay or add user controls",
+    problem: "Looping GIF images detected — a leading cause of visual distraction",
+    suggestion: "Replace looping GIFs with <video> (autoplay disabled) or CSS animations that respect prefers-reduced-motion",
+    wcag: "2.2.2 Pause, Stop, Hide",
+    iso: "Satisfaction"
+  },
+
+  animationCount: {
+    type: "lowerBetter",
+    good: 0,
+    bad: 10,
+    weight: 1.2,
+    problem: "Long-running or infinite CSS animations detected",
+    suggestion: "Reduce persistent animations or respect the prefers-reduced-motion media query",
     wcag: "2.2.2 Pause, Stop, Hide",
     iso: "Satisfaction"
   },
@@ -507,7 +512,42 @@ const mapping = {
     suggestion: "Add pause/stop/hide controls near any moving or auto-playing content",
     wcag: "2.2.2 Pause, Stop, Hide",
     iso: "Satisfaction"
+  },
+
+  // 2.3.1 Three Flashes or Below Threshold
+  flashingElementCount: {
+    type: "lowerBetter",
+    good: 0,
+    bad: 1,
+    weight: 2.0,
+    problem: "Elements detected that may flash faster than 3 times per second (seizure risk)",
+    suggestion: "Remove or throttle animations whose cycle is shorter than 333 ms, or ensure the flashing area is below the WCAG small safe area threshold",
+    wcag: "2.3.1 Three Flashes or Below Threshold",
+    iso: "Effectiveness"
+  },
+
+  // 2.2.1 Timing Adjustable
+  timedInteractionCount: {
+    type: "lowerBetter",
+    good: 0,
+    bad: 3,
+    weight: 1.5,
+    problem: "Timed interactions or session countdowns detected",
+    suggestion: "Allow users to turn off, adjust, or extend any time limit (at least 10× the default)",
+    wcag: "2.2.1 Timing Adjustable",
+    iso: "Effectiveness"
+  },
+
+  hasExtendTimeOption: {
+    type: "boolean",
+    good: true,
+    weight: 1.5,
+    problem: "No option detected to extend or disable the time limit",
+    suggestion: "Provide a clearly labelled control (e.g. 'Stay logged in' or 'Extend session') before the time limit expires",
+    wcag: "2.2.1 Timing Adjustable",
+    iso: "Satisfaction"
   }
+
 };
 
 module.exports = { mapping };
