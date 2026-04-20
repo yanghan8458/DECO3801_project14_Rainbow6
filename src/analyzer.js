@@ -434,15 +434,30 @@ async function analyzePage(url) {
 
       /** 7. Distraction Analysis */
       function analyzeDistraction() {
-        // 2.2.2 Pause, Stop, Hide
+        // 2.2.2 Pause, Stop, Hide (Check for infinite animations)
         const allElements = Array.from(document.querySelectorAll("*"));
-        const animationCount = allElements.filter(el => {
+        
+        let animationCount = 0;
+        let infiniteAnimationCount = 0; 
+
+        allElements.forEach(el => {
           const style = window.getComputedStyle(el);
-          return (
-            (style.animationName && style.animationName !== "none") ||
-            (style.transitionDuration && style.transitionDuration !== "0s")
-          );
-        }).length;
+          const hasAnimation = (style.animationName && style.animationName !== "none") || 
+                                (style.transitionDuration && style.transitionDuration !== "0s");
+          
+          if (hasAnimation) {
+            animationCount++;
+            // Check if the animation runs forever (> 5 seconds rule)
+            if (style.animationIterationCount === "infinite") {
+              infiniteAnimationCount++;
+            }
+          }
+          // Catch legacy HTML tags that scroll/blink forever
+          const tag = el.tagName.toLowerCase();
+          if (tag === "marquee" || tag === "blink") {
+            infiniteAnimationCount++;
+          }
+        });
 
         const videos = Array.from(document.querySelectorAll("video"));
         const audios = Array.from(document.querySelectorAll("audio"));
@@ -461,11 +476,18 @@ async function analyzePage(url) {
             "button[aria-label*='pause' i], button[aria-label*='stop' i], button.pause, button.stop, [role='button'][aria-label*='pause' i]"
           );
 
+        // 2.2.1 Timing Adjustable (Detecting countdowns/timers)
+        const countdownTimerCount = document.querySelectorAll(
+          "[role='timer'], [id*='timer' i], [class*='timer' i], [id*='countdown' i], [class*='countdown' i]"
+        ).length;
+
         return {
           animationCount,
+          infiniteAnimationCount,
           autoplayMediaCount,
           autoUpdatingContentCount,
-          hasPauseControl
+          hasPauseControl,
+          countdownTimerCount
         };
       }
 

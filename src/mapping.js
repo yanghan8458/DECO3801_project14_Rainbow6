@@ -527,7 +527,29 @@ const mapping = {
     suggestion: "Add pause/stop/hide controls near any moving or auto-playing content",
     wcag: "2.2.2 Pause, Stop, Hide",
     iso: "Satisfaction"
-  }
+  },
+
+  infiniteAnimationCount: {
+    type: "lowerBetter",
+    good: 0,
+    bad: 3,
+    weight: 2, // Heavy weight! This is the most critical issue for ADHD.
+    problem: "Infinite looping animations or marquees detected",
+    suggestion: "Ensure animations stop after 5 seconds to prevent severe distraction for users with ADHD (WCAG 2.2.2)",
+    wcag: "2.2.2 Pause, Stop, Hide",
+    iso: "Satisfaction"
+  },
+
+  countdownTimerCount: {
+    type: "lowerBetter",
+    good: 0,
+    bad: 2,
+    weight: 1.5,
+    problem: "Time limits or countdown timers detected",
+    suggestion: "Provide mechanisms for users to turn off, adjust, or extend time limits to prevent panic (WCAG 2.2.1)",
+    wcag: "2.2.1 Timing Adjustable",
+    iso: "Effectiveness"
+  },
 };
 
 module.exports = { mapping };
