@@ -322,12 +322,35 @@ async function analyzePage(url) {
           if (ratio < threshold) contrastIssueCount++;
         }
 
-        // --- Line length estimate ---
+        // --- Line length & Advanced Typography Check (WCAG 1.4.8 & 1.4.12) ---
         const paragraphs = Array.from(document.querySelectorAll("p"));
+        let textJustifyCount = 0;
+        let lineSpacingIssueCount = 0;
+
         const lineLengthEstimate = paragraphs.length
           ? paragraphs.reduce((sum, p) => {
+              const style = window.getComputedStyle(p);
               const w = p.getBoundingClientRect().width;
-              const fs = parseFloat(window.getComputedStyle(p).fontSize) || 16;
+              const fs = parseFloat(style.fontSize) || 16;
+              
+              // Check for justified text
+              if (style.textAlign === "justify") {
+                textJustifyCount++;
+              }
+
+              // Check if line-height is at least 1.5x font size
+              const lineHeight = style.lineHeight;
+              if (lineHeight === "normal") {
+                // "normal" is usually ~1.2, which fails the 1.5x requirement
+                lineSpacingIssueCount++;
+              } else {
+                const lhValue = parseFloat(lineHeight);
+                // use 1.45 instead of 1.5 to forgive tiny browser rounding errors
+                if (lhValue && (lhValue / fs) < 1.45) {
+                  lineSpacingIssueCount++;
+                }
+              }
+
               return sum + w / (fs * 0.5);
             }, 0) / paragraphs.length
           : 0;
@@ -356,7 +379,9 @@ async function analyzePage(url) {
           lineLengthEstimate,
           contrastIssueCount,
           visualDensityScore: visibleElements.length,
-          fontResizeSupport
+          fontResizeSupport,
+          textJustifyCount,
+          lineSpacingIssueCount
         };
       }
 

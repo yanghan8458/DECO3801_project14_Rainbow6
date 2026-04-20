@@ -392,6 +392,28 @@ const mapping = {
     iso: "Effectiveness"
   },
 
+  textJustifyCount: {
+    type: "lowerBetter",
+    good: 0,
+    bad: 3,
+    weight: 1.5,
+    problem: "Text is justified (aligned to both margins), causing 'rivers of white space'",
+    suggestion: "Use left-aligned text (or right-aligned for RTL languages) to help users with dyslexia track lines",
+    wcag: "1.4.8 Visual Presentation",
+    iso: "Effectiveness"
+  },
+
+  lineSpacingIssueCount: {
+    type: "lowerBetter",
+    good: 0,
+    bad: 5,
+    weight: 1.5,
+    problem: "Line spacing (leading) is too tight",
+    suggestion: "Ensure line height is at least 1.5 times the font size for better readability",
+    wcag: "1.4.12 Text Spacing",
+    iso: "Satisfaction"
+  },
+
 
   // ===== 6. ASSISTANCE & SUPPORT =====
 
