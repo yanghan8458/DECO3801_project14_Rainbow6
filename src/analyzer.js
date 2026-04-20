@@ -399,11 +399,36 @@ async function analyzePage(url) {
         const hasErrorMessage =
           !!document.querySelector("[role='alert'], [aria-live='assertive'], .error, .error-message, [aria-invalid='true']");
 
+        // Check how many inputs use professional ARIA bindings for validation/errors
+        const inputsWithValidation = inputs.filter(input =>
+          input.hasAttribute("aria-describedby") ||
+          input.hasAttribute("aria-errormessage") ||
+          input.hasAttribute("pattern") ||
+          input.hasAttribute("aria-invalid")
+        );
+        const accessibleValidationRatio = inputs.length ? inputsWithValidation.length / inputs.length : 1;
+
+        // Check for multi-step, review, or confirmation buttons
+        const formButtons = Array.from(document.querySelectorAll("button, input[type='submit'], input[type='button'], a.button"));
+        const hasSubmissionReviewMechanism = formButtons.some(btn => {
+          const text = (btn.innerText || btn.value || btn.getAttribute("aria-label") || "").toLowerCase();
+          return  text.includes("review") || 
+                  text.includes("confirm") || 
+                  text.includes("undo") || 
+                  text.includes("back") || 
+                  text.includes("edit") || 
+                  text.includes("change") ||
+                  text.includes("check") ||
+                  text.includes("validate");
+        });
+
         return {
           formFieldCount: inputs.length,
           labelCoverage: inputs.length ? labels.length / inputs.length : 1,
           hasErrorMessage,
-          requiredFieldCount: requiredFields.length
+          requiredFieldCount: requiredFields.length,
+          accessibleValidationRatio,
+          hasSubmissionReviewMechanism
         };
       }
 

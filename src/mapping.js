@@ -461,6 +461,27 @@ const mapping = {
     iso: "Effectiveness"
   },
 
+  accessibleValidationRatio: {
+    type: "higherBetter",
+    good: 0.8, // 80% of inputs having accessible validation is excellent
+    bad: 0.2,
+    weight: 1.5,
+    problem: "Form inputs lack accessible validation bindings (e.g., aria-describedby)",
+    suggestion: "Use ARIA attributes to programmatically link error messages to their corresponding input fields",
+    wcag: "3.3.1 Error Identification",
+    iso: "Effectiveness"
+  },
+
+  hasSubmissionReviewMechanism: {
+    type: "boolean",
+    good: true,
+    weight: 1.5,
+    problem: "No review, confirm, or undo mechanism detected for form submissions",
+    suggestion: "Provide a 'Review' step or an 'Undo' option before finalizing important form submissions",
+    wcag: "3.3.4 Error Prevention (Legal, Financial, Data)",
+    iso: "Satisfaction"
+  },
+
 
   // ===== 7. DISTRACTION =====
 
