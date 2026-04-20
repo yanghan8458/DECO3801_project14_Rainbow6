@@ -410,38 +410,139 @@ async function analyzePage(url) {
 
       /** 7. Distraction Analysis **/
       function analyzeDistraction() {
-        // 2.2.2 Pause, Stop, Hide
+
         const allElements = Array.from(document.querySelectorAll("*"));
+
+        // 2.2.2 Pause, Stop, Hide
+
+        // 1. GIF detection — looping GIFs are the most common distraction
+        const gifCount = [
+          ...Array.from(document.querySelectorAll("img[src]")).filter(img =>
+            /\.gif(\?.*)?$/i.test(img.getAttribute("src"))
+          ),
+          ...Array.from(document.querySelectorAll("source[srcset]")).filter(src =>
+            /\.gif(\?.*)?$/i.test(src.getAttribute("srcset"))
+          )
+        ].length;
+
+        // 2. CSS animation count — WCAG 2.2.2 targets content that moves
+        //    for MORE than 5 seconds or loops infinitely.
         const animationCount = allElements.filter(el => {
           const style = window.getComputedStyle(el);
-          return (
-            (style.animationName && style.animationName !== "none") ||
-            (style.transitionDuration && style.transitionDuration !== "0s")
-          );
+          const animName = style.animationName;
+          if (!animName || animName === "none") return false; // no keyframe animation
+
+          const iterCount = style.animationIterationCount || "1";
+          const duration  = parseFloat(style.animationDuration) || 0; // seconds
+
+          // Infinite loops always count
+          if (iterCount === "infinite") return true;
+
+          // Finite but total play time > 5 s (WCAG threshold)
+          const totalDuration = duration * (parseFloat(iterCount) || 1);
+          return totalDuration > 5;
         }).length;
 
+        // 3. Autoplay media
         const videos = Array.from(document.querySelectorAll("video"));
-        const audios = Array.from(document.querySelectorAll("audio"));
+        const audios  = Array.from(document.querySelectorAll("audio"));
         const autoplayMediaCount = [
           ...videos.filter(v => v.autoplay),
           ...audios.filter(a => a.autoplay)
         ].length;
 
+        // 4. Auto-updating content (meta refresh + ARIA live regions)
         const metaRefresh = document.querySelector("meta[http-equiv='refresh']");
         const autoUpdatingContentCount =
           (metaRefresh ? 1 : 0) +
           document.querySelectorAll("[aria-live='polite'], [aria-live='assertive']").length;
 
+        // 5. Pause / stop control present for moving content
         const hasPauseControl =
           !!document.querySelector(
-            "button[aria-label*='pause' i], button[aria-label*='stop' i], button.pause, button.stop, [role='button'][aria-label*='pause' i]"
+            "button[aria-label*='pause' i], button[aria-label*='stop' i]," +
+            "button.pause, button.stop," +
+            "[role='button'][aria-label*='pause' i]," +
+            "button[aria-label*='animation' i]"
           );
 
+        // 2.3.1 Three Flashes or Below Threshold
+        const FLASH_PERIOD_THRESHOLD_MS = 333; // 3 Hz
+
+        const flashingElementCount = allElements.filter(el => {
+          const style = window.getComputedStyle(el);
+
+          // Check CSS keyframe animations
+          const animName = style.animationName;
+          if (animName && animName !== "none") {
+            const duration  = parseFloat(style.animationDuration) * 1000; // → ms
+            const iterCount = style.animationIterationCount || "1";
+            if (
+              duration > 0 &&
+              duration < FLASH_PERIOD_THRESHOLD_MS &&
+              (iterCount === "infinite" || parseFloat(iterCount) > 1)
+            ) {
+              return true;
+            }
+          }
+
+          // Check rapid CSS transitions on colour/opacity properties
+          const transDuration = parseFloat(style.transitionDuration) * 1000;
+          const transProps    = style.transitionProperty || "";
+          if (
+            transDuration > 0 &&
+            transDuration < FLASH_PERIOD_THRESHOLD_MS &&
+            /color|background|opacity|visibility/.test(transProps)
+          ) {
+            return true;
+          }
+
+          return false;
+        }).length;
+
+        // 2.2.1 Timing Adjustable
+        const timerTextPatterns = [
+          "countdown", "count down", "timer", "session timeout",
+          "session expires", "expires in", "time remaining",
+          "auto-submit", "automatic logout", "you will be logged out"
+        ];
+        const pageText = (document.body.innerText || "").toLowerCase();
+        const timerTextMatches = timerTextPatterns.filter(p => pageText.includes(p)).length;
+
+        const timerElementCount = document.querySelectorAll(
+          "[data-countdown], [data-timer], [data-timeout]," +
+          ".countdown, .timer, .session-timer," +
+          "[aria-label*='timer' i], [aria-label*='countdown' i], [aria-label*='session' i]"
+        ).length;
+
+        const timedInteractionCount = timerTextMatches + timerElementCount;
+
+        const extensionKeywords = /extend|more time|stay logged in|keep.?session|renew session|continue session/i;
+        const interactiveEls = Array.from(document.querySelectorAll(
+          "button, a, input[type='button'], input[type='submit'], [role='button']"
+        ));
+        const hasExtendTimeOption = interactiveEls.some(el => {
+          const label = (
+            el.innerText ||
+            el.value ||
+            el.getAttribute("aria-label") ||
+            el.getAttribute("title") || ""
+          );
+          return extensionKeywords.test(label);
+        });
+
         return {
+          // 2.2.2
+          gifCount,
           animationCount,
           autoplayMediaCount,
           autoUpdatingContentCount,
-          hasPauseControl
+          hasPauseControl,
+          // 2.3.1
+          flashingElementCount,
+          // 2.2.1
+          timedInteractionCount,
+          hasExtendTimeOption
         };
       }
 
