@@ -158,19 +158,31 @@ async function analyzePage(url) {
       }
 
       /** 3. Media Analysis */
+      function analyzeMedia() {
+        const videos = Array.from(document.querySelectorAll("video"));
+        const audios = Array.from(document.querySelectorAll("audio"));
+
+        // 2. 1.2.2 Captions (check for <track kind="captions"> in videos)
+        const captionTrackCount = videos.reduce((count, v) => {
+          return count + v.querySelectorAll("track[kind='captions']").length;
+        }, 0);
+
+        const videosWithCaptionsRatio = videos.length
+          ? videos.filter(v => v.querySelector("track[kind='captions']")).length / videos.length
+          : null;
       // 1.2.3 Audio Description (find links with 'transcript' in it)
         const allLinks = Array.from(document.querySelectorAll("a"));
         const transcriptLinkCount = allLinks.filter(a =>
           /transcript/i.test(a.textContent) || /transcript/i.test(a.getAttribute("href") || "")
         ).length;
 
-        // NEW UPGRADE: make sure we have enough transcripts for all videos/audios
+        // make sure we have enough transcripts for all videos/audios
         const allMedia = [...videos, ...audios];
         const mediaAlternativeCoverage = allMedia.length 
           ? Math.min(1, transcriptLinkCount / allMedia.length) 
           : 1; // if no media, then it's perfect (100%)
 
-        // NEW UPGRADE: check if user can actually pause/play the media
+        // check if user can actually pause/play the media
         const mediaWithControls = allMedia.filter(m => m.hasAttribute("controls"));
         const mediaWithControlsRatio = allMedia.length 
           ? mediaWithControls.length / allMedia.length 
@@ -191,6 +203,7 @@ async function analyzePage(url) {
           mediaWithControlsRatio,
           autoplayMediaCount
         };
+      }
 
       /** 4. Clear Language Analysis */
       function analyzeLanguage() {
@@ -387,13 +400,13 @@ async function analyzePage(url) {
 
       /** 6. Assistance & Support Analysis */
       function analyzeAssistance() {
-        const inputs = document.querySelectorAll(
+        const inputs = Array.from(document.querySelectorAll(
           "input:not([type='hidden']), textarea, select"
-        );
-        const labels = document.querySelectorAll("label");
-        const requiredFields = document.querySelectorAll(
+        ));
+        const labels = Array.from(document.querySelectorAll("label"));
+        const requiredFields = Array.from(document.querySelectorAll(
           "input[required], textarea[required], select[required]"
-        );
+        ));
 
         // 3.3.3 Error Suggestion
         const hasErrorMessage =
@@ -500,6 +513,7 @@ async function analyzePage(url) {
         assistance: analyzeAssistance(),
         distraction: analyzeDistraction()
       };
+    
     });
 
     return { url, artifacts };
