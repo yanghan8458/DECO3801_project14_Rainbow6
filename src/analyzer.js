@@ -226,15 +226,82 @@ async function analyzePage(url) {
       /** 5. Visual Presentation Analysis */
       function analyzeVisual() {
         // 1.4.8 Visual Presentation
-        const elements = Array.from(document.querySelectorAll("*")).filter(el => {
-          const style = window.getComputedStyle(el);
-          return (
-            style.display !== "none" &&
-            style.visibility !== "hidden" &&
-            style.opacity !== "0"
-          );
-        });
 
+        // --- Contrast helpers (WCAG 2.x relative luminance) ---
+
+        // Parse "rgb(r, g, b)" or "rgba(r, g, b, a)" into [r, g, b] 0-255
+        function parseRGB(colorStr) {
+          const m = colorStr.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+          if (!m) return null;
+          return [parseInt(m[1]), parseInt(m[2]), parseInt(m[3])];
+        }
+
+        // WCAG relative luminance for a single 0-255 channel
+        function linearize(c) {
+          const s = c / 255;
+          return s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+        }
+
+        function luminance([r, g, b]) {
+          return 0.2126 * linearize(r) + 0.7152 * linearize(g) + 0.0722 * linearize(b);
+        }
+
+        function contrastRatio(rgb1, rgb2) {
+          const l1 = luminance(rgb1);
+          const l2 = luminance(rgb2);
+          const lighter = Math.max(l1, l2);
+          const darker  = Math.min(l1, l2);
+          return (lighter + 0.05) / (darker + 0.05);
+        }
+
+        // Walk up the DOM to find the first ancestor with a non-transparent background
+        function resolveBackground(el) {
+          let node = el;
+          while (node && node !== document.documentElement) {
+            const bg = window.getComputedStyle(node).backgroundColor;
+            if (bg && bg !== "rgba(0, 0, 0, 0)" && bg !== "transparent") return bg;
+            node = node.parentElement;
+          }
+          // Fall back to white (browser default)
+          return "rgb(255, 255, 255)";
+        }
+
+        // --- Contrast scan ---
+        // Sample text-bearing leaf elements; cap at 300 for performance
+        const TEXT_TAGS = "p, h1, h2, h3, h4, h5, h6, li, td, th, label, a, span, button";
+        const candidates = Array.from(document.querySelectorAll(TEXT_TAGS))
+          .filter(el => {
+            const s = window.getComputedStyle(el);
+            if (s.display === "none" || s.visibility === "hidden" || s.opacity === "0") return false;
+            // Only elements that directly contain text (not just wrapper divs)
+            return Array.from(el.childNodes).some(
+              n => n.nodeType === Node.TEXT_NODE && n.textContent.trim().length > 0
+            );
+          })
+          .slice(0, 300);
+
+        let contrastIssueCount = 0;
+        for (const el of candidates) {
+          const style = window.getComputedStyle(el);
+          const fgRaw = style.color;
+          const bgRaw = resolveBackground(el);
+
+          const fg = parseRGB(fgRaw);
+          const bg = parseRGB(bgRaw);
+          if (!fg || !bg) continue;
+
+          const ratio = contrastRatio(fg, bg);
+          const fontSize = parseFloat(style.fontSize) || 16;
+          const fontWeight = parseInt(style.fontWeight) || 400;
+
+          // WCAG 1.4.3: large text (>=18pt / >=14pt bold) threshold 3:1, else 4.5:1
+          const isLargeText = fontSize >= 24 || (fontSize >= 18.67 && fontWeight >= 700);
+          const threshold = isLargeText ? 3 : 4.5;
+
+          if (ratio < threshold) contrastIssueCount++;
+        }
+
+        // --- Line length estimate ---
         const paragraphs = Array.from(document.querySelectorAll("p"));
         const lineLengthEstimate = paragraphs.length
           ? paragraphs.reduce((sum, p) => {
@@ -244,6 +311,7 @@ async function analyzePage(url) {
             }, 0) / paragraphs.length
           : 0;
 
+        // --- Font resize support ---
         let fontResizeSupport = false;
         try {
           for (const sheet of Array.from(document.styleSheets)) {
@@ -257,10 +325,16 @@ async function analyzePage(url) {
           }
         } catch (_) { /* styleSheets access denied */ }
 
+        // --- Visual density ---
+        const visibleElements = Array.from(document.querySelectorAll("*")).filter(el => {
+          const s = window.getComputedStyle(el);
+          return s.display !== "none" && s.visibility !== "hidden" && s.opacity !== "0";
+        });
+
         return {
           lineLengthEstimate,
-          contrastIssueCount: 0, // placeholder for future expansion
-          visualDensityScore: elements.length,
+          contrastIssueCount,
+          visualDensityScore: visibleElements.length,
           fontResizeSupport
         };
       }
