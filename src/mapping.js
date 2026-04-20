@@ -2,7 +2,7 @@
 
 const mapping = {
 
-  // ===== 1. CLEAR PURPOSE =====
+  // ===== 1. CLEAR PURPOSE — 版本1 =====
 
   // 2.4.2 Page Titled
   titleExists: {
@@ -103,7 +103,7 @@ const mapping = {
   },
 
 
-  // ===== 2. FINDABLE =====
+  // ===== 2. FINDABLE — 版本2 =====
 
   // 2.4.1 Bypass Blocks
   hasSkipLink: {
@@ -120,8 +120,8 @@ const mapping = {
     type: "boolean",
     good: true,
     weight: 2,
-    problem: "Skip link is broken (target ID not found on page)",
-    suggestion: "Ensure the href of the skip link matches an actual ID on the main content element",
+    problem: "Skip link is broken — target ID not found on page",
+    suggestion: "Ensure the href of the skip link matches an actual id on the main content element",
     wcag: "2.4.1 Bypass Blocks",
     iso: "Effectiveness"
   },
@@ -163,8 +163,8 @@ const mapping = {
     ideal: 7,
     max: 30,
     weight: 1.5,
-    problem: "Navigation menus contain too many links (Cognitive Overload)",
-    suggestion: "Group navigation links into smaller chunks (7-10 items max) to prevent decision fatigue",
+    problem: "Navigation menus contain too many links (cognitive overload)",
+    suggestion: "Group navigation links into smaller chunks (7–10 items max) to prevent decision fatigue",
     wcag: "2.4.5 Multiple Ways",
     iso: "Efficiency"
   },
@@ -202,7 +202,7 @@ const mapping = {
   },
 
 
-  // ===== 3. MEDIA =====
+  // ===== 3. MEDIA — 版本1 =====
 
   // 1.2.1 Audio-only and Video-only
   videoCount: {
@@ -267,30 +267,9 @@ const mapping = {
     iso: "Satisfaction"
   },
 
-  mediaAlternativeCoverage: {
-    type: "higherBetter",
-    good: 1, // 100% coverage is best
-    bad: 0.2,
-    weight: 1.5,
-    problem: "Not enough text alternatives (transcripts) for media content",
-    suggestion: "Provide text transcripts for all audio and video content to meet WCAG 1.2.1",
-    wcag: "1.2.1 Audio-only and Video-only",
-    iso: "Effectiveness"
-  },
 
-  mediaWithControlsRatio: {
-    type: "higherBetter",
-    good: 1,
-    bad: 0.5,
-    weight: 2, // Heavy weight because missing controls is super annoying!
-    problem: "Media players are missing playback controls (play/pause/volume)",
-    suggestion: "Always include the 'controls' attribute in <audio> and <video> tags",
-    wcag: "2.1.1 Keyboard / 2.2.2 Pause, Stop, Hide",
-    iso: "Satisfaction"
-  },
+  // ===== 4. CLEAR LANGUAGE — 版本1 =====
 
-
-  // ===== 4. CLEAR LANGUAGE =====
   readabilityScore: {
     type: "higherBetter",
     good: 70,
@@ -346,7 +325,7 @@ const mapping = {
   },
 
 
-  // ===== 5. VISUAL PRESENTATION =====
+  // ===== 5. VISUAL PRESENTATION — 版本2 =====
 
   // 1.4.8 Visual Presentation
   lineLengthEstimate: {
@@ -366,8 +345,8 @@ const mapping = {
     bad: 10,
     weight: 1.2,
     problem: "Contrast issues detected",
-    suggestion: "Improve text/background contrast",
-    wcag: "1.4.8 Visual Presentation",
+    suggestion: "Improve text/background contrast ratio (4.5:1 for normal text, 3:1 for large text)",
+    wcag: "1.4.3 Contrast (Minimum)",
     iso: "Effectiveness"
   },
 
@@ -397,25 +376,26 @@ const mapping = {
     good: 0,
     bad: 3,
     weight: 1.5,
-    problem: "Text is justified (aligned to both margins), causing 'rivers of white space'",
-    suggestion: "Use left-aligned text (or right-aligned for RTL languages) to help users with dyslexia track lines",
+    problem: "Text is justified (aligned to both margins), causing rivers of white space",
+    suggestion: "Use left-aligned text to help users with dyslexia track lines",
     wcag: "1.4.8 Visual Presentation",
     iso: "Effectiveness"
   },
 
+  // 1.4.12 Text Spacing
   lineSpacingIssueCount: {
     type: "lowerBetter",
     good: 0,
     bad: 5,
     weight: 1.5,
-    problem: "Line spacing (leading) is too tight",
-    suggestion: "Ensure line height is at least 1.5 times the font size for better readability",
+    problem: "Line spacing is too tight (below 1.5× font size)",
+    suggestion: "Ensure line-height is at least 1.5 times the font size for better readability",
     wcag: "1.4.12 Text Spacing",
     iso: "Satisfaction"
   },
 
 
-  // ===== 6. ASSISTANCE & SUPPORT =====
+  // ===== 6. ASSISTANCE & SUPPORT — 版本2 =====
 
   // 3.3.2 Labels or Instructions
   formFieldCount: {
@@ -449,6 +429,17 @@ const mapping = {
     iso: "Effectiveness"
   },
 
+  accessibleValidationRatio: {
+    type: "higherBetter",
+    good: 0.8,
+    bad: 0.2,
+    weight: 1.5,
+    problem: "Form inputs lack accessible validation bindings (e.g. aria-describedby)",
+    suggestion: "Use ARIA attributes to programmatically link error messages to their corresponding input fields",
+    wcag: "3.3.1 Error Identification",
+    iso: "Effectiveness"
+  },
+
   // 3.3.4 Error Prevention
   requiredFieldCount: {
     type: "lowerBetter",
@@ -461,29 +452,18 @@ const mapping = {
     iso: "Effectiveness"
   },
 
-  accessibleValidationRatio: {
-    type: "higherBetter",
-    good: 0.8, // 80% of inputs having accessible validation is excellent
-    bad: 0.2,
-    weight: 1.5,
-    problem: "Form inputs lack accessible validation bindings (e.g., aria-describedby)",
-    suggestion: "Use ARIA attributes to programmatically link error messages to their corresponding input fields",
-    wcag: "3.3.1 Error Identification",
-    iso: "Effectiveness"
-  },
-
   hasSubmissionReviewMechanism: {
     type: "boolean",
     good: true,
     weight: 1.5,
     problem: "No review, confirm, or undo mechanism detected for form submissions",
-    suggestion: "Provide a 'Review' step or an 'Undo' option before finalizing important form submissions",
-    wcag: "3.3.4 Error Prevention (Legal, Financial, Data)",
+    suggestion: "Provide a review step or an undo option before finalising important form submissions",
+    wcag: "3.3.4 Error Prevention",
     iso: "Satisfaction"
   },
 
 
-  // ===== 7. DISTRACTION =====
+  // ===== 7. DISTRACTION — 版本1 =====
 
   // 2.2.2 Pause, Stop, Hide
   animationCount: {
@@ -492,7 +472,7 @@ const mapping = {
     bad: 30,
     weight: 1.2,
     problem: "High number of animated elements detected",
-    suggestion: "Reduce animations or respect prefers-reduced-motion media query",
+    suggestion: "Reduce animations or respect the prefers-reduced-motion media query",
     wcag: "2.2.2 Pause, Stop, Hide",
     iso: "Satisfaction"
   },
@@ -527,29 +507,7 @@ const mapping = {
     suggestion: "Add pause/stop/hide controls near any moving or auto-playing content",
     wcag: "2.2.2 Pause, Stop, Hide",
     iso: "Satisfaction"
-  },
-
-  infiniteAnimationCount: {
-    type: "lowerBetter",
-    good: 0,
-    bad: 3,
-    weight: 2, // Heavy weight! This is the most critical issue for ADHD.
-    problem: "Infinite looping animations or marquees detected",
-    suggestion: "Ensure animations stop after 5 seconds to prevent severe distraction for users with ADHD (WCAG 2.2.2)",
-    wcag: "2.2.2 Pause, Stop, Hide",
-    iso: "Satisfaction"
-  },
-
-  countdownTimerCount: {
-    type: "lowerBetter",
-    good: 0,
-    bad: 2,
-    weight: 1.5,
-    problem: "Time limits or countdown timers detected",
-    suggestion: "Provide mechanisms for users to turn off, adjust, or extend time limits to prevent panic (WCAG 2.2.1)",
-    wcag: "2.2.1 Timing Adjustable",
-    iso: "Effectiveness"
-  },
+  }
 };
 
 module.exports = { mapping };
