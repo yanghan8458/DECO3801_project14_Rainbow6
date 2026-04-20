@@ -1,0 +1,283 @@
+{
+  "url": "https://uq.edu.au/",
+  "scores": {
+    "overallScore": 65,
+    "overallStatus": "warning",
+    "sections": [
+      {
+        "category": "purpose",
+        "score": 79,
+        "weight": 0.15,
+        "status": "warning"
+      },
+      {
+        "category": "findable",
+        "score": 70,
+        "weight": 0.15,
+        "status": "warning"
+      },
+      {
+        "category": "media",
+        "score": 82,
+        "weight": 0.1,
+        "status": "good"
+      },
+      {
+        "category": "language",
+        "score": 50,
+        "weight": 0.2,
+        "status": "poor"
+      },
+      {
+        "category": "visual",
+        "score": 82,
+        "weight": 0.15,
+        "status": "good"
+      },
+      {
+        "category": "assistance",
+        "score": 18,
+        "weight": 0.1,
+        "status": "poor"
+      },
+      {
+        "category": "distraction",
+        "score": 69,
+        "weight": 0.15,
+        "status": "warning"
+      }
+    ]
+  },
+  "insights": [
+    {
+      "section": "purpose",
+      "metric": "headingCount",
+      "value": 25,
+      "problem": "Too few or too many headings",
+      "suggestion": "Use headings to structure content clearly",
+      "mapping": {
+        "wcag": "2.4.6 Headings and Labels",
+        "iso": "Efficiency"
+      }
+    },
+    {
+      "section": "purpose",
+      "metric": "inputWithLabelRatio",
+      "value": 0.4,
+      "problem": "Form inputs are missing associated labels",
+      "suggestion": "Associate every input with a <label> using for/id, aria-label, or aria-labelledby",
+      "mapping": {
+        "wcag": "2.4.6 Headings and Labels",
+        "iso": "Effectiveness"
+      }
+    },
+    {
+      "section": "findable",
+      "metric": "navCount",
+      "value": 8,
+      "problem": "No navigation landmark or too many nav regions",
+      "suggestion": "Use one primary <nav> element for consistent navigation",
+      "mapping": {
+        "wcag": "2.4.5 Multiple Ways",
+        "iso": "Efficiency"
+      }
+    },
+    {
+      "section": "findable",
+      "metric": "hasBreadcrumb",
+      "value": false,
+      "problem": "No breadcrumb navigation detected",
+      "suggestion": "Add breadcrumb navigation to help users understand their location within the site",
+      "mapping": {
+        "wcag": "2.4.5 Multiple Ways",
+        "iso": "Efficiency"
+      }
+    },
+    {
+      "section": "findable",
+      "metric": "avgLinksPerNav",
+      "value": 30.625,
+      "problem": "Navigation menus contain too many links (Cognitive Overload)",
+      "suggestion": "Group navigation links into smaller chunks (7-10 items max) to prevent decision fatigue",
+      "mapping": {
+        "wcag": "2.4.5 Multiple Ways",
+        "iso": "Efficiency"
+      }
+    },
+    {
+      "section": "media",
+      "metric": "transcriptLinkCount",
+      "value": 0,
+      "problem": "No transcript links found for audio/video content",
+      "suggestion": "Provide text transcripts linked near each media element",
+      "mapping": {
+        "wcag": "1.2.3 Audio Description",
+        "iso": "Effectiveness"
+      }
+    },
+    {
+      "section": "language",
+      "metric": "readabilityScore",
+      "value": 0,
+      "problem": "Content readability is too low",
+      "suggestion": "Simplify sentence structure and vocabulary for a general audience",
+      "mapping": {
+        "wcag": "3.1.5 Reading Level",
+        "iso": "Effectiveness"
+      }
+    },
+    {
+      "section": "language",
+      "metric": "sentenceAverageLength",
+      "value": 55.55,
+      "problem": "Sentences are too long",
+      "suggestion": "Use shorter sentences or bullet points",
+      "mapping": {
+        "wcag": "3.1.5 Reading Level",
+        "iso": "Efficiency"
+      }
+    },
+    {
+      "section": "visual",
+      "metric": "lineSpacingIssueCount",
+      "value": 3,
+      "problem": "Line spacing (leading) is too tight",
+      "suggestion": "Ensure line height is at least 1.5 times the font size for better readability",
+      "mapping": {
+        "wcag": "1.4.12 Text Spacing",
+        "iso": "Satisfaction"
+      }
+    },
+    {
+      "section": "assistance",
+      "metric": "labelCoverage",
+      "value": 0.4,
+      "problem": "Form inputs lack labels",
+      "suggestion": "Add visible <label> elements or aria-label to all form inputs",
+      "mapping": {
+        "wcag": "3.3.2 Labels or Instructions",
+        "iso": "Effectiveness"
+      }
+    },
+    {
+      "section": "assistance",
+      "metric": "hasErrorMessage",
+      "value": false,
+      "problem": "No error message pattern detected",
+      "suggestion": "Add ARIA live regions or visible error messages for form validation",
+      "mapping": {
+        "wcag": "3.3.3 Error Suggestion",
+        "iso": "Effectiveness"
+      }
+    },
+    {
+      "section": "assistance",
+      "metric": "accessibleValidationRatio",
+      "value": 0,
+      "problem": "Form inputs lack accessible validation bindings (e.g., aria-describedby)",
+      "suggestion": "Use ARIA attributes to programmatically link error messages to their corresponding input fields",
+      "mapping": {
+        "wcag": "3.3.1 Error Identification",
+        "iso": "Effectiveness"
+      }
+    },
+    {
+      "section": "assistance",
+      "metric": "hasSubmissionReviewMechanism",
+      "value": false,
+      "problem": "No review, confirm, or undo mechanism detected for form submissions",
+      "suggestion": "Provide a 'Review' step or an 'Undo' option before finalizing important form submissions",
+      "mapping": {
+        "wcag": "3.3.4 Error Prevention (Legal, Financial, Data)",
+        "iso": "Satisfaction"
+      }
+    },
+    {
+      "section": "distraction",
+      "metric": "animationCount",
+      "value": 292,
+      "problem": "High number of animated elements detected",
+      "suggestion": "Reduce animations or respect prefers-reduced-motion media query",
+      "mapping": {
+        "wcag": "2.2.2 Pause, Stop, Hide",
+        "iso": "Satisfaction"
+      }
+    },
+    {
+      "section": "distraction",
+      "metric": "hasPauseControl",
+      "value": false,
+      "problem": "No pause or stop control found for animated/moving content",
+      "suggestion": "Add pause/stop/hide controls near any moving or auto-playing content",
+      "mapping": {
+        "wcag": "2.2.2 Pause, Stop, Hide",
+        "iso": "Satisfaction"
+      }
+    }
+  ],
+  "artifacts": {
+    "purpose": {
+      "titleExists": true,
+      "titleLength": 28,
+      "pageTitleMeaningfulScore": 80,
+      "h1Count": 1,
+      "headingCount": 25,
+      "headingMeaningfulScore": 68,
+      "labelCount": 2,
+      "inputWithLabelRatio": 0.4,
+      "labelMeaningfulScore": 100
+    },
+    "findable": {
+      "hasSkipLink": true,
+      "hasMainLandmark": true,
+      "hasSearch": true,
+      "navCount": 8,
+      "internalLinkCount": 28,
+      "hasBreadcrumb": false,
+      "avgLinksPerNav": 30.625,
+      "skipLinkWorks": true,
+      "focusVisibleDetected": true
+    },
+    "media": {
+      "videoCount": 0,
+      "audioCount": 0,
+      "captionTrackCount": 0,
+      "videosWithCaptionsRatio": null,
+      "transcriptLinkCount": 0,
+      "mediaAlternativeCoverage": 1,
+      "mediaWithControlsRatio": 1,
+      "autoplayMediaCount": 0
+    },
+    "language": {
+      "readabilityScore": 0,
+      "sentenceAverageLength": 55.55,
+      "paragraphAverageLength": 11.363636363636363,
+      "complexWordRatio": 0.0783078307830783,
+      "langAttributeExists": true
+    },
+    "visual": {
+      "lineLengthEstimate": 47.53657670454545,
+      "contrastIssueCount": 0,
+      "visualDensityScore": 679,
+      "fontResizeSupport": true,
+      "textJustifyCount": 0,
+      "lineSpacingIssueCount": 3
+    },
+    "assistance": {
+      "formFieldCount": 5,
+      "labelCoverage": 0.4,
+      "hasErrorMessage": false,
+      "requiredFieldCount": 0,
+      "accessibleValidationRatio": 0,
+      "hasSubmissionReviewMechanism": false
+    },
+    "distraction": {
+      "animationCount": 292,
+      "infiniteAnimationCount": 0,
+      "autoplayMediaCount": 0,
+      "autoUpdatingContentCount": 0,
+      "hasPauseControl": false,
+      "countdownTimerCount": 0
+    }
+  }
+}
