@@ -2,7 +2,7 @@
 
 const mapping = {
 
-  // ===== 1. CLEAR PURPOSE — 版本1 =====
+  // ===== 1. CLEAR PURPOSE =====
 
   // 2.4.2 Page Titled
   titleExists: {
@@ -103,7 +103,7 @@ const mapping = {
   },
 
 
-  // ===== 2. FINDABLE — 版本2 =====
+  // ===== 2. FINDABLE =====
 
   // 2.4.1 Bypass Blocks
   hasSkipLink: {
@@ -202,7 +202,7 @@ const mapping = {
   },
 
 
-  // ===== 3. MEDIA — 版本1 =====
+  // ===== 3. MEDIA =====
 
   // 1.2.1 Audio-only and Video-only
   videoCount: {
@@ -268,7 +268,7 @@ const mapping = {
   },
 
 
-  // ===== 4. CLEAR LANGUAGE — 版本1 =====
+  // ===== 4. CLEAR LANGUAGE =====
 
   readabilityScore: {
     type: "higherBetter",
@@ -325,7 +325,7 @@ const mapping = {
   },
 
 
-  // ===== 5. VISUAL PRESENTATION — 版本2 =====
+  // ===== 5. VISUAL PRESENTATION =====
 
   // 1.4.8 Visual Presentation
   lineLengthEstimate: {
@@ -395,7 +395,7 @@ const mapping = {
   },
 
 
-  // ===== 6. ASSISTANCE & SUPPORT — 版本2 =====
+  // ===== 6. ASSISTANCE & SUPPORT =====
 
   // 3.3.2 Labels or Instructions
   formFieldCount: {
@@ -463,7 +463,7 @@ const mapping = {
   },
 
 
-  // ===== 7. DISTRACTION — 版本1 =====
+  // ===== 7. DISTRACTION =====
 
   // 2.2.2 Pause, Stop, Hide
   animationCount: {
