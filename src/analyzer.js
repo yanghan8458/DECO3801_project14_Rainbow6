@@ -11,7 +11,7 @@ async function analyzePage(url) {
 
     const artifacts = await page.evaluate(() => {
 
-      /** 1. Clear Purpose Analysis */
+      /** 1. Clear Purpose Analysis — 版本1 (79分) */
       function analyzePurpose() {
         const title = document.title || "";
         const h1s = document.querySelectorAll("h1");
@@ -78,23 +78,25 @@ async function analyzePage(url) {
         };
       }
 
-      /** 2. Findable Analysis */
+      /** 2. Findable Analysis — 版本2 (70分) */
       function analyzeFindable() {
         const allLinks = Array.from(document.querySelectorAll("a[href]"));
 
-        // 2.4.1 Bypass Blocks - check if skip link exists AND works
+        // 2.4.1 Bypass Blocks — check skip link exists AND its target is reachable
         const skipLink = allLinks.find(a =>
           /^#(main|content|skip|primary|maincontent)/i.test(a.getAttribute("href"))
         );
-        let hasSkipLink = !!skipLink;
-        let skipLinkWorks = false;
-        
+        const hasSkipLink = !!skipLink;
+
+        // skipLinkWorks is null when no skip link exists, so pages without one
+        // are not double-penalised (null is excluded from the weighted sum)
+        let skipLinkWorks = null;
         if (hasSkipLink) {
           const targetId = skipLink.getAttribute("href").substring(1);
-          // try to find the target element on the page
-          if (document.getElementById(targetId) || document.querySelector(`[name="${targetId}"]`)) {
-            skipLinkWorks = true;
-          }
+          skipLinkWorks = !!(
+            document.getElementById(targetId) ||
+            document.querySelector(`[name="${targetId}"]`)
+          );
         }
 
         const hasMainLandmark = !!document.querySelector("main, [role='main']");
@@ -113,12 +115,9 @@ async function analyzePage(url) {
             href.startsWith(window.location.origin);
         }).length;
 
-        // count average links per nav to check cognitive overload (Miller's Law)
+        // Average links per nav — proxy for cognitive overload (Miller's Law)
         const navs = Array.from(document.querySelectorAll("nav"));
-        let totalNavLinks = 0;
-        navs.forEach(nav => {
-          totalNavLinks += nav.querySelectorAll("a").length;
-        });
+        const totalNavLinks = navs.reduce((sum, nav) => sum + nav.querySelectorAll("a").length, 0);
         const avgLinksPerNav = navs.length ? totalNavLinks / navs.length : 0;
 
         const hasBreadcrumb =
@@ -146,23 +145,23 @@ async function analyzePage(url) {
 
         return {
           hasSkipLink,
+          skipLinkWorks,
           hasMainLandmark,
           hasSearch,
           navCount,
+          avgLinksPerNav,
           internalLinkCount,
           hasBreadcrumb,
-          avgLinksPerNav: avgLinksPerNav,
-          skipLinkWorks: skipLinkWorks,
           focusVisibleDetected
         };
       }
 
-      /** 3. Media Analysis */
+      /** 3. Media Analysis — 版本1 (55分，更严格) */
       function analyzeMedia() {
         const videos = Array.from(document.querySelectorAll("video"));
         const audios = Array.from(document.querySelectorAll("audio"));
 
-        // 2. 1.2.2 Captions (check for <track kind="captions"> in videos)
+        // 1.2.2 Captions
         const captionTrackCount = videos.reduce((count, v) => {
           return count + v.querySelectorAll("track[kind='captions']").length;
         }, 0);
@@ -170,23 +169,12 @@ async function analyzePage(url) {
         const videosWithCaptionsRatio = videos.length
           ? videos.filter(v => v.querySelector("track[kind='captions']")).length / videos.length
           : null;
-      // 1.2.3 Audio Description (find links with 'transcript' in it)
+
+        // 1.2.3 Audio Description
         const allLinks = Array.from(document.querySelectorAll("a"));
         const transcriptLinkCount = allLinks.filter(a =>
           /transcript/i.test(a.textContent) || /transcript/i.test(a.getAttribute("href") || "")
         ).length;
-
-        // make sure we have enough transcripts for all videos/audios
-        const allMedia = [...videos, ...audios];
-        const mediaAlternativeCoverage = allMedia.length 
-          ? Math.min(1, transcriptLinkCount / allMedia.length) 
-          : 1; // if no media, then it's perfect (100%)
-
-        // check if user can actually pause/play the media
-        const mediaWithControls = allMedia.filter(m => m.hasAttribute("controls"));
-        const mediaWithControlsRatio = allMedia.length 
-          ? mediaWithControls.length / allMedia.length 
-          : 1;
 
         const autoplayMediaCount = [
           ...videos.filter(v => v.autoplay),
@@ -199,13 +187,11 @@ async function analyzePage(url) {
           captionTrackCount,
           videosWithCaptionsRatio,
           transcriptLinkCount,
-          mediaAlternativeCoverage,
-          mediaWithControlsRatio,
           autoplayMediaCount
         };
       }
 
-      /** 4. Clear Language Analysis */
+      /** 4. Clear Language Analysis — 版本1 (50分) */
       function analyzeLanguage() {
         const clone = document.body.cloneNode(true);
         clone.querySelectorAll("script, style, noscript").forEach(el => el.remove());
@@ -257,20 +243,16 @@ async function analyzePage(url) {
         };
       }
 
-      /** 5. Visual Presentation Analysis */
+      /** 5. Visual Presentation Analysis — 版本2 (82分，更严格) */
       function analyzeVisual() {
-        // 1.4.8 Visual Presentation
 
         // --- Contrast helpers (WCAG 2.x relative luminance) ---
-
-        // Parse "rgb(r, g, b)" or "rgba(r, g, b, a)" into [r, g, b] 0-255
         function parseRGB(colorStr) {
           const m = colorStr.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
           if (!m) return null;
           return [parseInt(m[1]), parseInt(m[2]), parseInt(m[3])];
         }
 
-        // WCAG relative luminance for a single 0-255 channel
         function linearize(c) {
           const s = c / 255;
           return s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
@@ -288,7 +270,6 @@ async function analyzePage(url) {
           return (lighter + 0.05) / (darker + 0.05);
         }
 
-        // Walk up the DOM to find the first ancestor with a non-transparent background
         function resolveBackground(el) {
           let node = el;
           while (node && node !== document.documentElement) {
@@ -296,18 +277,15 @@ async function analyzePage(url) {
             if (bg && bg !== "rgba(0, 0, 0, 0)" && bg !== "transparent") return bg;
             node = node.parentElement;
           }
-          // Fall back to white (browser default)
           return "rgb(255, 255, 255)";
         }
 
-        // --- Contrast scan ---
-        // Sample text-bearing leaf elements; cap at 300 for performance
+        // --- Contrast scan (capped at 300 for performance) ---
         const TEXT_TAGS = "p, h1, h2, h3, h4, h5, h6, li, td, th, label, a, span, button";
         const candidates = Array.from(document.querySelectorAll(TEXT_TAGS))
           .filter(el => {
             const s = window.getComputedStyle(el);
             if (s.display === "none" || s.visibility === "hidden" || s.opacity === "0") return false;
-            // Only elements that directly contain text (not just wrapper divs)
             return Array.from(el.childNodes).some(
               n => n.nodeType === Node.TEXT_NODE && n.textContent.trim().length > 0
             );
@@ -317,25 +295,20 @@ async function analyzePage(url) {
         let contrastIssueCount = 0;
         for (const el of candidates) {
           const style = window.getComputedStyle(el);
-          const fgRaw = style.color;
-          const bgRaw = resolveBackground(el);
-
-          const fg = parseRGB(fgRaw);
-          const bg = parseRGB(bgRaw);
+          const fg = parseRGB(style.color);
+          const bg = parseRGB(resolveBackground(el));
           if (!fg || !bg) continue;
 
           const ratio = contrastRatio(fg, bg);
           const fontSize = parseFloat(style.fontSize) || 16;
           const fontWeight = parseInt(style.fontWeight) || 400;
-
-          // WCAG 1.4.3: large text (>=18pt / >=14pt bold) threshold 3:1, else 4.5:1
           const isLargeText = fontSize >= 24 || (fontSize >= 18.67 && fontWeight >= 700);
           const threshold = isLargeText ? 3 : 4.5;
 
           if (ratio < threshold) contrastIssueCount++;
         }
 
-        // --- Line length & Advanced Typography Check (WCAG 1.4.8 & 1.4.12) ---
+        // --- Line length + typography checks (WCAG 1.4.8 & 1.4.12) ---
         const paragraphs = Array.from(document.querySelectorAll("p"));
         let textJustifyCount = 0;
         let lineSpacingIssueCount = 0;
@@ -345,23 +318,16 @@ async function analyzePage(url) {
               const style = window.getComputedStyle(p);
               const w = p.getBoundingClientRect().width;
               const fs = parseFloat(style.fontSize) || 16;
-              
-              // Check for justified text
-              if (style.textAlign === "justify") {
-                textJustifyCount++;
-              }
 
-              // Check if line-height is at least 1.5x font size
+              if (style.textAlign === "justify") textJustifyCount++;
+
               const lineHeight = style.lineHeight;
               if (lineHeight === "normal") {
-                // "normal" is usually ~1.2, which fails the 1.5x requirement
+                // "normal" ≈ 1.2× — below the 1.5× WCAG requirement
                 lineSpacingIssueCount++;
               } else {
                 const lhValue = parseFloat(lineHeight);
-                // use 1.45 instead of 1.5 to forgive tiny browser rounding errors
-                if (lhValue && (lhValue / fs) < 1.45) {
-                  lineSpacingIssueCount++;
-                }
+                if (lhValue && (lhValue / fs) < 1.45) lineSpacingIssueCount++;
               }
 
               return sum + w / (fs * 0.5);
@@ -398,7 +364,7 @@ async function analyzePage(url) {
         };
       }
 
-      /** 6. Assistance & Support Analysis */
+      /** 6. Assistance & Support Analysis — 版本2 (18分，更严格) */
       function analyzeAssistance() {
         const inputs = Array.from(document.querySelectorAll(
           "input:not([type='hidden']), textarea, select"
@@ -412,27 +378,24 @@ async function analyzePage(url) {
         const hasErrorMessage =
           !!document.querySelector("[role='alert'], [aria-live='assertive'], .error, .error-message, [aria-invalid='true']");
 
-        // Check how many inputs use professional ARIA bindings for validation/errors
+        // Accessible validation: inputs linked to error/hint text via ARIA
         const inputsWithValidation = inputs.filter(input =>
           input.hasAttribute("aria-describedby") ||
           input.hasAttribute("aria-errormessage") ||
           input.hasAttribute("pattern") ||
           input.hasAttribute("aria-invalid")
         );
-        const accessibleValidationRatio = inputs.length ? inputsWithValidation.length / inputs.length : 1;
+        const accessibleValidationRatio = inputs.length
+          ? inputsWithValidation.length / inputs.length
+          : 1;
 
-        // Check for multi-step, review, or confirmation buttons
-        const formButtons = Array.from(document.querySelectorAll("button, input[type='submit'], input[type='button'], a.button"));
+        // 3.3.4 Error Prevention — review / confirm / undo affordances
+        const formButtons = Array.from(document.querySelectorAll(
+          "button, input[type='submit'], input[type='button'], a.button"
+        ));
         const hasSubmissionReviewMechanism = formButtons.some(btn => {
           const text = (btn.innerText || btn.value || btn.getAttribute("aria-label") || "").toLowerCase();
-          return  text.includes("review") || 
-                  text.includes("confirm") || 
-                  text.includes("undo") || 
-                  text.includes("back") || 
-                  text.includes("edit") || 
-                  text.includes("change") ||
-                  text.includes("check") ||
-                  text.includes("validate");
+          return /review|confirm|undo|back|edit|change|check|validate/.test(text);
         });
 
         return {
@@ -445,32 +408,17 @@ async function analyzePage(url) {
         };
       }
 
-      /** 7. Distraction Analysis */
+      /** 7. Distraction Analysis — 版本1 (47分，更严格) */
       function analyzeDistraction() {
-        // 2.2.2 Pause, Stop, Hide (Check for infinite animations)
+        // 2.2.2 Pause, Stop, Hide
         const allElements = Array.from(document.querySelectorAll("*"));
-        
-        let animationCount = 0;
-        let infiniteAnimationCount = 0; 
-
-        allElements.forEach(el => {
+        const animationCount = allElements.filter(el => {
           const style = window.getComputedStyle(el);
-          const hasAnimation = (style.animationName && style.animationName !== "none") || 
-                                (style.transitionDuration && style.transitionDuration !== "0s");
-          
-          if (hasAnimation) {
-            animationCount++;
-            // Check if the animation runs forever (> 5 seconds rule)
-            if (style.animationIterationCount === "infinite") {
-              infiniteAnimationCount++;
-            }
-          }
-          // Catch legacy HTML tags that scroll/blink forever
-          const tag = el.tagName.toLowerCase();
-          if (tag === "marquee" || tag === "blink") {
-            infiniteAnimationCount++;
-          }
-        });
+          return (
+            (style.animationName && style.animationName !== "none") ||
+            (style.transitionDuration && style.transitionDuration !== "0s")
+          );
+        }).length;
 
         const videos = Array.from(document.querySelectorAll("video"));
         const audios = Array.from(document.querySelectorAll("audio"));
@@ -489,31 +437,23 @@ async function analyzePage(url) {
             "button[aria-label*='pause' i], button[aria-label*='stop' i], button.pause, button.stop, [role='button'][aria-label*='pause' i]"
           );
 
-        // 2.2.1 Timing Adjustable (Detecting countdowns/timers)
-        const countdownTimerCount = document.querySelectorAll(
-          "[role='timer'], [id*='timer' i], [class*='timer' i], [id*='countdown' i], [class*='countdown' i]"
-        ).length;
-
         return {
           animationCount,
-          infiniteAnimationCount,
           autoplayMediaCount,
           autoUpdatingContentCount,
-          hasPauseControl,
-          countdownTimerCount
+          hasPauseControl
         };
       }
 
       return {
-        purpose: analyzePurpose(),
-        findable: analyzeFindable(),
-        media: analyzeMedia(),
-        language: analyzeLanguage(),
-        visual: analyzeVisual(),
+        purpose:    analyzePurpose(),
+        findable:   analyzeFindable(),
+        media:      analyzeMedia(),
+        language:   analyzeLanguage(),
+        visual:     analyzeVisual(),
         assistance: analyzeAssistance(),
         distraction: analyzeDistraction()
       };
-    
     });
 
     return { url, artifacts };
