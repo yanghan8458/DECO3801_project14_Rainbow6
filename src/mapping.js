@@ -267,6 +267,28 @@ const mapping = {
     iso: "Satisfaction"
   },
 
+  mediaAlternativeCoverage: {
+    type: "higherBetter",
+    good: 1, // 100% coverage is best
+    bad: 0.2,
+    weight: 1.5,
+    problem: "Not enough text alternatives (transcripts) for media content",
+    suggestion: "Provide text transcripts for all audio and video content to meet WCAG 1.2.1",
+    wcag: "1.2.1 Audio-only and Video-only",
+    iso: "Effectiveness"
+  },
+
+  mediaWithControlsRatio: {
+    type: "higherBetter",
+    good: 1,
+    bad: 0.5,
+    weight: 2, // Heavy weight because missing controls is super annoying!
+    problem: "Media players are missing playback controls (play/pause/volume)",
+    suggestion: "Always include the 'controls' attribute in <audio> and <video> tags",
+    wcag: "2.1.1 Keyboard / 2.2.2 Pause, Stop, Hide",
+    iso: "Satisfaction"
+  },
+
 
   // ===== 4. CLEAR LANGUAGE =====
   readabilityScore: {
