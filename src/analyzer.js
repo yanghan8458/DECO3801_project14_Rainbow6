@@ -11,7 +11,7 @@ async function analyzePage(url) {
 
     const artifacts = await page.evaluate(() => {
 
-      /** 1. Clear Purpose Analysis — 版本1 (79分) */
+      /** 1. Clear Purpose Analysis **/
       function analyzePurpose() {
         const title = document.title || "";
         const h1s = document.querySelectorAll("h1");
@@ -78,7 +78,7 @@ async function analyzePage(url) {
         };
       }
 
-      /** 2. Findable Analysis — 版本2 (70分) */
+      /** 2. Findable Analysis **/
       function analyzeFindable() {
         const allLinks = Array.from(document.querySelectorAll("a[href]"));
 
@@ -156,7 +156,7 @@ async function analyzePage(url) {
         };
       }
 
-      /** 3. Media Analysis — 版本1 (55分，更严格) */
+      /** 3. Media Analysis **/
       function analyzeMedia() {
         const videos = Array.from(document.querySelectorAll("video"));
         const audios = Array.from(document.querySelectorAll("audio"));
@@ -191,7 +191,7 @@ async function analyzePage(url) {
         };
       }
 
-      /** 4. Clear Language Analysis — 版本1 (50分) */
+      /** 4. Clear Language Analysis **/
       function analyzeLanguage() {
         const clone = document.body.cloneNode(true);
         clone.querySelectorAll("script, style, noscript").forEach(el => el.remove());
@@ -243,7 +243,7 @@ async function analyzePage(url) {
         };
       }
 
-      /** 5. Visual Presentation Analysis — 版本2 (82分，更严格) */
+      /** 5. Visual Presentation Analysis **/
       function analyzeVisual() {
 
         // --- Contrast helpers (WCAG 2.x relative luminance) ---
@@ -364,7 +364,7 @@ async function analyzePage(url) {
         };
       }
 
-      /** 6. Assistance & Support Analysis — 版本2 (18分，更严格) */
+      /** 6. Assistance & Support Analysis **/
       function analyzeAssistance() {
         const inputs = Array.from(document.querySelectorAll(
           "input:not([type='hidden']), textarea, select"
@@ -408,7 +408,7 @@ async function analyzePage(url) {
         };
       }
 
-      /** 7. Distraction Analysis — 版本1 (47分，更严格) */
+      /** 7. Distraction Analysis **/
       function analyzeDistraction() {
         // 2.2.2 Pause, Stop, Hide
         const allElements = Array.from(document.querySelectorAll("*"));
