@@ -82,10 +82,21 @@ async function analyzePage(url) {
       function analyzeFindable() {
         const allLinks = Array.from(document.querySelectorAll("a[href]"));
 
-        // 2.4.1 Bypass Blocks
-        const hasSkipLink = allLinks.some(a =>
+        // 2.4.1 Bypass Blocks - check if skip link exists AND works
+        const skipLink = allLinks.find(a =>
           /^#(main|content|skip|primary|maincontent)/i.test(a.getAttribute("href"))
         );
+        let hasSkipLink = !!skipLink;
+        let skipLinkWorks = false;
+        
+        if (hasSkipLink) {
+          const targetId = skipLink.getAttribute("href").substring(1);
+          // try to find the target element on the page
+          if (document.getElementById(targetId) || document.querySelector(`[name="${targetId}"]`)) {
+            skipLinkWorks = true;
+          }
+        }
+
         const hasMainLandmark = !!document.querySelector("main, [role='main']");
 
         // 2.4.5 Multiple Ways
@@ -101,6 +112,14 @@ async function analyzePage(url) {
           return href.startsWith("/") || href.startsWith("#") ||
             href.startsWith(window.location.origin);
         }).length;
+
+        // count average links per nav to check cognitive overload (Miller's Law)
+        const navs = Array.from(document.querySelectorAll("nav"));
+        let totalNavLinks = 0;
+        navs.forEach(nav => {
+          totalNavLinks += nav.querySelectorAll("a").length;
+        });
+        const avgLinksPerNav = navs.length ? totalNavLinks / navs.length : 0;
 
         const hasBreadcrumb =
           !!document.querySelector("[aria-label*='breadcrumb' i], [class*='breadcrumb' i], [itemtype*='BreadcrumbList']");
@@ -132,6 +151,8 @@ async function analyzePage(url) {
           navCount,
           internalLinkCount,
           hasBreadcrumb,
+          avgLinksPerNav: avgLinksPerNav,
+          skipLinkWorks: skipLinkWorks,
           focusVisibleDetected
         };
       }

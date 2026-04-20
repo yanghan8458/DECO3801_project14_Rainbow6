@@ -116,6 +116,16 @@ const mapping = {
     iso: "Efficiency"
   },
 
+  skipLinkWorks: {
+    type: "boolean",
+    good: true,
+    weight: 2,
+    problem: "Skip link is broken (target ID not found on page)",
+    suggestion: "Ensure the href of the skip link matches an actual ID on the main content element",
+    wcag: "2.4.1 Bypass Blocks",
+    iso: "Effectiveness"
+  },
+
   hasMainLandmark: {
     type: "boolean",
     good: true,
@@ -144,6 +154,17 @@ const mapping = {
     weight: 1,
     problem: "No navigation landmark or too many nav regions",
     suggestion: "Use one primary <nav> element for consistent navigation",
+    wcag: "2.4.5 Multiple Ways",
+    iso: "Efficiency"
+  },
+
+  avgLinksPerNav: {
+    type: "range",
+    ideal: 7,
+    max: 30,
+    weight: 1.5,
+    problem: "Navigation menus contain too many links (Cognitive Overload)",
+    suggestion: "Group navigation links into smaller chunks (7-10 items max) to prevent decision fatigue",
     wcag: "2.4.5 Multiple Ways",
     iso: "Efficiency"
   },
