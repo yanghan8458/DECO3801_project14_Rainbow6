@@ -1,0 +1,180 @@
+// src/ai-agent/agent.js
+
+const cognitiveAccessibilityAdvice = require("./skills/cognitiveAccessibilityPrompt");
+const codeFixSuggestions           = require("./skills/codeFixSuggestions");
+
+// -- Skill registry - add new skills here ----------------------------------
+const skills = [
+  cognitiveAccessibilityAdvice,   // inputType: "cognitive_accessibility_analysis"
+  codeFixSuggestions              // inputType: "code_fix_request"
+];
+
+function getSkillByInputType(type) {
+  return skills.find(skill => skill.inputType === type);
+}
+
+// -- Core agent runner -----------------------------------------------------
+
+async function runAgent(input) {
+  if (!input || typeof input !== "object") {
+    return { ok: false, error: "Invalid agent input" };
+  }
+
+  const { type, payload } = input;
+
+  if (!type) {
+    return { ok: false, error: "Missing input type" };
+  }
+
+  const skill = getSkillByInputType(type);
+  if (!skill) {
+    return { ok: false, error: `No skill found for input type: ${type}` };
+  }
+
+  const result = await skill.run(payload || {});
+
+  return {
+    ok:        !result.error,
+    agent:     "local-mini-ai-agent",
+    skillUsed: skill.name,
+    result
+  };
+}
+
+// -- CLI entry point --------------------------------------------------------
+
+async function main() {
+  const command = process.argv[2];
+
+  if (command === "health") {
+    const health = await cognitiveAccessibilityAdvice.checkOllamaHealth();
+    console.log(JSON.stringify(health, null, 2));
+    return;
+  }
+
+  if (command === "test") {
+    const test = await cognitiveAccessibilityAdvice.testOllamaChat();
+    console.log(JSON.stringify(test, null, 2));
+    return;
+  }
+
+  if (command === "demo") {
+    const demoInput = {
+      type: "cognitive_accessibility_analysis",
+      payload: {
+        url:           "https://www.apple.com/au/",
+        overallScore:  55,
+        overallStatus: "poor",
+        details: [
+          {
+            category: "language",
+            score:    74,
+            status:   "warning",
+            insights: [
+              {
+                title:    "Some content may be too complex",
+                message:  "Several text sections appear long or information-dense.",
+                severity: "medium"
+              }
+            ]
+          },
+          {
+            category: "visual",
+            score:    99,
+            status:   "good",
+            insights: []
+          },
+          {
+            category: "forms",
+            score:    0,
+            status:   "poor",
+            insights: [
+              {
+                title:    "Form structure may be unclear",
+                message:  "Some form-related elements may lack clear labels or guidance.",
+                severity: "high"
+              }
+            ]
+          },
+          {
+            category: "navigation",
+            score:    0,
+            status:   "poor",
+            insights: [
+              {
+                title:    "Navigation may be difficult to follow",
+                message:  "Navigation structure may not provide enough clear guidance.",
+                severity: "high"
+              }
+            ]
+          }
+        ],
+        codeIssues: [
+          {
+            ruleId:      "img-missing-alt",
+            wcag:        "1.1.1 Non-text Content",
+            severity:    "critical",
+            category:    "purpose",
+            description: "img element is missing an alt attribute",
+            snippet:     "<img src=\"/hero.jpg\" class=\"hero-image\">",
+            selector:    "section.hero > img",
+            fix:         "Add a descriptive alt attribute."
+          },
+          {
+            ruleId:      "link-empty",
+            wcag:        "2.4.4 Link Purpose",
+            severity:    "serious",
+            category:    "findable",
+            description: "Link has no visible text or accessible label",
+            snippet:     "<a href=\"/products\"><svg>...</svg></a>",
+            selector:    "nav > ul > li:nth-child(3) > a",
+            fix:         "Add an aria-label that describes the link destination."
+          }
+        ]
+      }
+    };
+
+    const result = await runAgent(demoInput);
+    console.log(JSON.stringify(result, null, 2));
+    return;
+  }
+
+  if (command === "demo-fix") {
+    const demoFixInput = {
+      type: "code_fix_request",
+      payload: {
+        url: "https://www.apple.com/au/",
+        codeIssues: [
+          {
+            ruleId:      "img-missing-alt",
+            wcag:        "1.1.1 Non-text Content",
+            severity:    "critical",
+            category:    "purpose",
+            description: "img element is missing an alt attribute",
+            snippet:     "<img src=\"/hero.jpg\" class=\"hero-image\">",
+            selector:    "section.hero > img",
+            fix:         "Add a descriptive alt attribute."
+          }
+        ]
+      }
+    };
+
+    const result = await runAgent(demoFixInput);
+    console.log(JSON.stringify(result, null, 2));
+    return;
+  }
+
+  console.log(`
+Usage:
+  node ai-agent/agent.js health      Check Ollama connectivity
+  node ai-agent/agent.js test        Send a test message to the model
+  node ai-agent/agent.js demo        Run cognitive accessibility skill demo
+  node ai-agent/agent.js demo-fix    Run code fix skill demo
+`.trim());
+}
+
+if (require.main === module) {
+  main();
+}
+
+module.exports = { runAgent, skills };
